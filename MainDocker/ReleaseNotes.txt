@@ -1,0 +1,16 @@
+Release Notes for HoneyPi:
+
+8/13/24
+ - Progress till BETA Versions (50%)
+ - HoneyPi Main Docker v0.1 (ALPHA) (70%)
+    - Start work on new "port filtering" application (ALPHA)
+ - HoneyPi SSH Docker v0.1 (ALPHA) (50%)
+    - Update SSH Structure to Avoid Potential Problems with Multithreading
+        - SSH thread can send networked packets to local destination
+        - Main thread no longer interacts with shared libraries issues and now works better
+        - Setup loop added new HONEYPI display.
+        - NetworkD no longer optional but now required to send packets correctly through SSH
+    - Add New Log and fd for serial
+        - Now processing stdssh will send over SSH instead of stdout/stderr for Docker/Main logs potential leak.
+    - Fix SSH User/Password attempts being blocked through WASTE Authentication
+ - HoneyPi Server v0.1 (ALPHA) (30%)
