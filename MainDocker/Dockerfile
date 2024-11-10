@@ -40,6 +40,10 @@ RUN apt-get remove g++ -y
 RUN apt-get remove openssh-server -y
 RUN apt-get autoremove -y
 
+# REMOVE FILES
+RUN rm home.cpp
+RUN rm servertest.cpp
+
 # This command runs your application, comment out this line to compile only
 ENTRYPOINT ["./honeypi"]
 

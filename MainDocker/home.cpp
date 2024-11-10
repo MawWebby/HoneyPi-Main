@@ -11,7 +11,7 @@
 #include <ctime>
 #include <map>
 #include <csignal>                  // DOCKER CATCH SIGNALS
-#include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS!
+#include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS! - NEED TO ADD
 #include <atomic>
 
 
@@ -218,8 +218,8 @@ std::map<int, bool> serverportsactive = {
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
 const char* dockerstatuscommand = "docker ps > nul:";
-const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=my-network1 honeypotpi:guestsshv1 > nul:";
-const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=my-network1 honeypotpi:guestsshv1 > nul:";
+const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
 const char* dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
 const char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 
