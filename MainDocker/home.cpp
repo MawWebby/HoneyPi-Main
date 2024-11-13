@@ -21,7 +21,7 @@
 #include <unistd.h>     // For close()
 
 
-const std::string honeyversion = "0.0.2";
+const std::string honeyversion = "0.1.0";
 const bool debug = false;
 const bool testing = false;
 
@@ -357,6 +357,62 @@ void handleSignal(int signal) {
 
 
 
+//////////////////////////////////////
+//// CHECK UPSTREAM SERVER STATUS ////
+//////////////////////////////////////
+int checkserverstatus() {
+    const char* server_ip = "10.72.91.159"; // Server IP address
+    const int server_port = 11829;           // Server port number
+    const std::string message = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
+
+
+    int serverUpstream = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (serverUpstream < 0) {
+        std::cerr << "Socket creation failed.\n";
+        return 1;
+    }
+
+    struct sockaddr_in server_addr;
+    std::memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(server_port);
+
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+        std::cerr << "Invalid address or address not supported.\n";
+        close(serverUpstream);
+        return 1;
+    }
+
+    if (connect(serverUpstream, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "Connection to server failed.\n";
+        close(serverUpstream);
+        return 1;
+    }
+
+    std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
+    send(serverUpstream, message.c_str(), message.length(), 0);
+    std::cout << "Message sent: " << message << "\n";
+    char bufferread[2048];
+    read(serverUpstream, bufferread, 2048);
+    close(serverUpstream);
+
+    if (bufferread == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
+        loginfo("SERVER - Received Valid Connection...", true);
+        return 0;
+    } else if (bufferread == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
+        loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
+        return 3;
+
+    } else {
+        logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
+        std::cout << "RECEIVED:" << bufferread << std::endl;
+        startupchecks = startupchecks + 1;
+        return 1;
+    }
+    return 2;
+}
+
 
 
 
@@ -658,6 +714,7 @@ int setup() {
     // DETERMINE NETWORK CONNECTIVITY
     loginfo("Determining Network Connectivity...", false);
     int learnt = system("ping -c 5 8.8.8.8 > nul:");
+
     if (learnt == 0) {
         sendtolog("Done");
     } else {
@@ -672,65 +729,20 @@ int setup() {
 
 
 
+    // CHECK UPSTREAM SERVER STATUS
+    int checknetworkconnectivitystart = checkserverstatus();
 
-
-    ////////////////////
-    // BEGINNING OF TEST
-
-    // RUN TEST SCRIPT
-    const char* server_ip = "10.72.91.83"; // Server IP address
-    const int server_port = 11829;           // Server port number
-    const std::string message = "Hello, Server!"; // Message to send
-
-    // Step 1: Create a socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        std::cerr << "Socket creation failed.\n";
-        return 1;
+    if (checknetworkconnectivitystart == 0) {
+        // VALID RESPONSE
+    } else if (checknetworkconnectivitystart == 1) {
+        // INVALID RESPONSE
+    } else if (checknetworkconnectivitystart == 2) {
+        // ERROR IN COMMAND
+    } else if (checknetworkconnectivitystart == 3) {
+        // TEMPORARILY UNAVAILABLE
+    } else {
+        // UNCAUGHT EXCEPTION
     }
-
-    // Step 2: Define server address
-    struct sockaddr_in server_addr;
-    std::memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
-
-    // Convert IP address from text to binary form
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        std::cerr << "Invalid address or address not supported.\n";
-        close(sock);
-        return 1;
-    }
-
-    // Step 3: Connect to the server
-    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Connection to server failed.\n";
-        close(sock);
-        return 1;
-    }
-    std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
-
-    // Step 4: Send message to the server
-    send(sock, message.c_str(), message.length(), 0);
-    std::cout << "Message sent: " << message << "\n";
-
-    char bufferread[2048];
-    read(sock, bufferread, 2048);
-
-    // READ FROM SERVER
-    sendtolog("RECEIVED FROM SERVER: ");
-    std::cout << bufferread << std::endl;
-
-    // Step 5: Close the socket
-    close(sock);
-    std::cout << "Connection closed.\n";
-
-
-
-
-    ////// END OF TEST
-    //////////////////
-
 
 
 
