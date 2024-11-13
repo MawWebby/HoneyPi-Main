@@ -13,6 +13,12 @@
 #include <csignal>                  // DOCKER CATCH SIGNALS
 #include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS! - NEED TO ADD
 #include <atomic>
+#include <iostream>
+#include <string>
+#include <cstring>      // For memset
+#include <sys/socket.h> // For socket functions
+#include <arpa/inet.h>  // For sockaddr_in and inet_pton
+#include <unistd.h>     // For close()
 
 
 const std::string honeyversion = "0.0.2";
@@ -218,8 +224,10 @@ std::map<int, bool> serverportsactive = {
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
 const char* dockerstatuscommand = "docker ps > nul:";
-const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+//const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+//const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
 const char* dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
 const char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 
@@ -355,88 +363,49 @@ void handleSignal(int signal) {
 //////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (63599) //
 //////////////////////////////////////////
-void handleConnections(int server_fd) { 
-    char buffer[1024] = {0};
+void handleConnections(int server_fd) {
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    int new_socket;
-    ssize_t valread;
-    std::string hello = "Hello from server";
 
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        if (SSHDockerActive == false) {
-            logcritical("SSH Docker Container Dead, Closing Port", true);
-            return;
-        }
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
+    while (true) {
+        int new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
 
-    timer1.store(time(NULL));
+        if (new_socket > 0) {
+            char buffer63599[1024] = {0};
 
-    while(SSHDockerActive == true) {
-        read(new_socket, buffer, 1024);
-        if (debug == true) {
-            sendtologopen(buffer);
-        }
+            // Attempt to read data from the client
+            ssize_t readable = read(new_socket, buffer63599, 1024);
 
-        loginfo(buffer, true);
-
-        if (buffer != NULL && attacked == false) {
-
-            
-            // HEARTBEAT COMMAND TO NOT SPAM LOG
-            if (strcmp(buffer, "heartbeatSSH") == 0) {
-                lastcheckinSSH = time(NULL);
-                if (heartbeat >= 30) {
-                    loginfo("Received heartbeat from SSH Guest VM", true);
-                    heartbeat = 0;
+            if (readable == 0) {
+                // Client disconnected gracefully
+                loginfo("Client disconnected", true);
+            } else if (readable > 0) {
+                // Successfully read data
+                loginfo(buffer63599, true);
+            } else if (readable == -1) {
+                // Handle read error
+                if (errno == EINTR) {
+                    // Interrupted by signal, just continue
+                    loginfo("Read interrupted by signal, retrying...", true);
+                } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // Should not happen in blocking mode, but check anyway
+                    loginfo("Read temporarily unavailable, retrying...", true);
+                    sleep(3); // Retry after 3 seconds
+                    readable = read(new_socket, buffer63599, 1024); // Attempt to read again
+                    if (readable == -1) {
+                        logcritical("Read failed again", true);
+                    } else if (readable == 0) {
+                        loginfo("Client disconnected", true);
+                    } else {
+                        loginfo(buffer63599, true);
+                    }
                 } else {
-                    heartbeat = heartbeat + 1;
-                }
-                SSHDockerActive = true;
-            }
-
-            if(strcmp(buffer, "attacked") == 0) {
-                logwarning("SSH attacked! - Logging...", true);
-            }
-
-        } else {
-            if (buffer != NULL && attacked == true) {
-
-                // ADD COMMANDS HERE OF BEING ATTACKED AND STORING THAT DATA
-
-            } else {
-                if (buffer == NULL) {
-                    logcritical("INVALID CONNECTION RECEIVED, ignoring...", true);
+                    perror("Read failed");
+                    logcritical("Read failed with an error", true);
                 }
             }
-        }
 
-        // Send a hello message to the client
-//        send(new_socket, hello.c_str(), hello.size(), 0);
-//        std::cout << "Hello message sent" << std::endl;
-
-        if (SSHDockerActive == false) {
-            logcritical("No SSH Docker Container/Killing Thread", true);
-        }
-
-        // ANTI-CRASH PACKET FLOW CHECK
-        if (timer1.load() == time(NULL)) {
-            packetsreceivedSSH = packetsreceivedSSH + 1;
-            if (packetsreceivedSSH >= 10) {
-                // KILL CONTAINER
-                logcritical("PACKET OVERFLOW DETECTED ON SSH DOCKER PORT!/KILLING THREAD AND CONTAINER!", true);
-                close(server_fd);
-                timer1.store(time(NULL));
-                SSHDockerActive = false;
-                system(dockerkillguestssh);
-                sleep(3);
-                system(dockerremoveguestssh);
-            }
-        } else {
-            timer1.store(time(NULL));
-            packetsreceivedSSH = 0;
+            close(new_socket);  // Close connection after handling it
         }
     }
 }
@@ -448,13 +417,14 @@ void handleConnections(int server_fd) {
 //////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (11535) //
 //////////////////////////////////////////
+// FIX THIS - RESTRUCTURE THIS TO NEW CONTEXT! 
 void handle11535Connections(int server_fd2) {
     char buffer[1024] = {0};
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
     int new_socket2;
     ssize_t valread;
-    std::string hello = "Hello from server";
+    std::string hello = "HEY!";
 
     if ((new_socket2 = accept(server_fd2, (struct sockaddr*)&address, &addrlen)) < 0) {
         perror("accept");
@@ -616,7 +586,7 @@ int createnetworkport63599() {
         exit(EXIT_FAILURE);
     }
 
-    fcntl(server_fd, F_SETFL, O_NONBLOCK);
+    //fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
     return server_fd;
 }
@@ -703,7 +673,68 @@ int setup() {
 
 
 
-    loginfo("[INFO] - Verifying System...", false);
+
+    ////////////////////
+    // BEGINNING OF TEST
+
+    // RUN TEST SCRIPT
+    const char* server_ip = "10.72.91.83"; // Server IP address
+    const int server_port = 11829;           // Server port number
+    const std::string message = "Hello, Server!"; // Message to send
+
+    // Step 1: Create a socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        std::cerr << "Socket creation failed.\n";
+        return 1;
+    }
+
+    // Step 2: Define server address
+    struct sockaddr_in server_addr;
+    std::memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(server_port);
+
+    // Convert IP address from text to binary form
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+        std::cerr << "Invalid address or address not supported.\n";
+        close(sock);
+        return 1;
+    }
+
+    // Step 3: Connect to the server
+    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "Connection to server failed.\n";
+        close(sock);
+        return 1;
+    }
+    std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
+
+    // Step 4: Send message to the server
+    send(sock, message.c_str(), message.length(), 0);
+    std::cout << "Message sent: " << message << "\n";
+
+    char bufferread[2048];
+    read(sock, bufferread, 2048);
+
+    // READ FROM SERVER
+    sendtolog("RECEIVED FROM SERVER: ");
+    std::cout << bufferread << std::endl;
+
+    // Step 5: Close the socket
+    close(sock);
+    std::cout << "Connection closed.\n";
+
+
+
+
+    ////// END OF TEST
+    //////////////////
+
+
+
+
+    loginfo("Verifying System...", false);
 
     // FUTURE LOOP OF INTEGRITY
 
@@ -715,7 +746,7 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    loginfo("[INFO] - Checking for Updates...", false);
+    loginfo("Checking for Updates...", false);
     if (checkforupdates == true) {
         // CHECK FOR SYSTEM UPDATES
         int returnedvalue = system("apt-get update > nul:");
@@ -732,23 +763,7 @@ int setup() {
             return 1;
         }
 
-
-
-        // CHECK FOR SYSTEM UPDATES
-        loginfo("[INFO] - Updating System...", false);
-        int returnedvalue2 = system("apt-get upgrade -y > nul:");
-        if (returnedvalue2 == 0) {
-            sendtolog("Done");
-        } else {
-            sendtolog("ERROR");
-            logcritical("UNABLE TO UPGRADE SYSTEM!", true);
-            logcritical("This could be potentially dangerous!", true);
-            logcritical("KILLING PROCESS!", true);
-            startupchecks = startupchecks + 1;
-            return 1;
-            return 1;
-            return 1;
-        }
+        // REMOVED AUTO UPGRADE FOR POTENTIAL PACKAGE CONFLICTS AND BROKEN INSTALLS
 
 
         // CHECK FOR UPDATES FROM SERVER
@@ -758,6 +773,10 @@ int setup() {
         sendtolog("disabled");
         logwarning("UNABLE TO CHECK FOR UPDATES! (SYSTEM DISABLED)", true);
     }
+
+
+    // CHECK FOR DOCKER UPDATES
+
 
 
     
@@ -800,15 +819,12 @@ int setup() {
 
 
 
-
-    int PORT = 63599;
-
     // OPEN NETWORK SERVER PORTS (1/3)
     loginfo("Opening Server Ports (1/3)", false);
 
-    port1 = createnetworkport63599();
+    int server63599 = createnetworkport63599();
 
-    if (port1 == 0) {
+    if (server63599 != 0) {
         sendtolog("Done");
     } else {
         sendtolog("ERROR");
@@ -822,10 +838,7 @@ int setup() {
     sleep(2);
 
 
-
-
-    sleep(3);
-    PORT = 11535;
+    int PORT = 11535;
 
     // OPEN NETWORK SERVER PORTS (2/3)
     loginfo("Opening Server Ports (2/3)...", false);
@@ -932,11 +945,20 @@ int setup() {
 
     sendtolog("future");
 
-    loginfo("Starting Port Blocking Service!", true);
+
+    // SERVER PORT LISTEN THREAD
+    loginfo("Creating server thread on port 63599 listen...", false);
+
+    sleep(2);
+    std::thread acceptingClientsThread(handleConnections, server63599);
+    acceptingClientsThread.detach();
+    sleep(1);
+
+    sendtolog("Done");
 
     
     
-    return 0;
+    return startupchecks;
 }
 
 
@@ -947,20 +969,12 @@ int setup() {
 int main() {
 
     // SETUP LOOP
-    setup();
+    int startupc = setup();
 
-    // SERVER PORT LISTEN THREAD
-    loginfo("Creating server thread on port 63599 listen...", false);
-
-    sleep(2);
-    std::thread acceptingClientsThread(handleConnections, port1);
-    acceptingClientsThread.detach();
-    sleep(1);
-
-    sendtolog("Done");
+    
 
     // STARTUP CHECKS
-    if (startupchecks != 0) {
+    if (startupc != 0) {
         logcritical("STARTUP CHECKS RETURNED EXIT CODE 1", true);
         logcritical("THE SYSTEM COULD NOT CONTINUE!", true);
         logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED", true);
@@ -969,7 +983,7 @@ int main() {
         close(serverport1);
         close(serverport2);
         sleep(10);
-        int completion = system("docker kill * > nul:");
+        //int completion = system("docker kill * > nul:");
         sleep(10);
 
         // EXIT AND STOP PROCESSES
@@ -980,6 +994,7 @@ int main() {
 
     
 
+/*
     if (testing == true) {
         loginfo("Beta Testing Active...", false);
         sleep(1);
@@ -988,16 +1003,14 @@ int main() {
         loginfo("Not beta testing/Removing beta file...", true);
         startupchecks = startupchecks + system("rm test");
     }
+*/
 
     loginfo("Main HoneyPi has started successfully", true);
+    bool runnning = true;
 
-    // NETWORK INFORMATION
-    char buffer[BUFFER_SIZE];
-    sockaddr_in clientAddr;
-    socklen_t clientAddrLen = sizeof(clientAddr);
 
     // MAIN RUNNING LOOP
-    while(true && startupchecks == 0 && encounterederrors == 0) {
+    while(true && startupchecks == 0 && encounterederrors == 0 && runnning == true) {
 
         if (attacked == false) {
             sleep(2);
@@ -1008,6 +1021,10 @@ int main() {
 
         if (generatingreportSSH == true) {
             encounterederrors = encounterederrors + createreport();
+        }
+
+        if (stopSIGNAL.load() == 1) {
+            runnning = false;
         }
 
 
@@ -1093,7 +1110,13 @@ int main() {
         close(serverport1);
         close(serverport2);
         sleep(10);
-        int completion = system("docker kill * > nul:");
+        //int completion = system("docker kill * > nul:");
         sleep(10);
+    }
+
+    if (runnning == true) {
+        loginfo("CALLED TO STOP SERVER!", true);
+        sleep(3);
+        return 0;
     }
 }

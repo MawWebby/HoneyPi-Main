@@ -33,16 +33,16 @@ WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
 RUN g++ -o honeypi home.cpp
-RUN g++ -o test servertest.cpp
+RUN g++ -o beta beta.cpp
 
 # Remove Unneeded Packages
-RUN apt-get remove g++ -y
-RUN apt-get remove openssh-server -y
-RUN apt-get autoremove -y
+#RUN apt-get remove g++ -y
+#RUN apt-get remove openssh-server -y
+#RUN apt-get autoremove -y
 
 # REMOVE FILES
 RUN rm home.cpp
-RUN rm servertest.cpp
+RUN rm beta.cpp
 
 # This command runs your application, comment out this line to compile only
 ENTRYPOINT ["./honeypi"]
