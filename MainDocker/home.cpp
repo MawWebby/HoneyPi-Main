@@ -35,7 +35,14 @@ std::atomic<int> stopSIGNAL(0);
 std::atomic<int> updateSIGNAL(0);
 std::atomic<int> serverErrors(0);
 std::atomic<int> sshErrors(0);
+std::atomic<int> sshActive(0);
+std::atomic<int> sshHeartBeatFirstTime(0);
 
+// DELAY VARIABLES
+std::atomic<long long int> timesincelastcheckinSSH(0);
+
+// RESTART ATTEMPTS
+std::atomic<int> restartatttemptsSSH(0);
 
 // TIMING VARIABLES
 std::atomic<int> timer0(0);
@@ -71,15 +78,13 @@ int heartbeat = 29;
 std::string erroroccurred = "";
 int packetsreceivedSSH = 0;
 int packetsreceivedAPI = 0;
-bool heartbeatreceivedrsttimeSSH = false;
-
-// DOCKER VARIABLES
-int timesincelastcheckinSSH = 0;
-long int lastcheckinSSH = 0;
+//bool heartbeatreceivedrsttimeSSH = false;
 
 
 // REPORT VARIABLES - SSH
-bool SSHDockerActive = false;
+//bool SSHDockerActive = false;
+bool lockoutSSH = false;
+int maxattemptsSSH = 5;
 bool generatingreportSSH = false;
 std::string pubipSSH = "0.0.0.0";
 int portSSH = 0;
@@ -407,10 +412,21 @@ int checkserverstatus() {
     } else {
         logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
         std::cout << "RECEIVED:" << bufferread << std::endl;
-        startupchecks = startupchecks + 1;
         return 1;
     }
     return 2;
+}
+
+int sendverificationtoserver() {
+
+}
+
+bool checkforupdatesfromserver() {
+    
+}
+
+std::string tokenfromserver() {
+
 }
 
 
@@ -419,7 +435,7 @@ int checkserverstatus() {
 //////////////////////////////////////////
 // HANDLE NETWORKED CONNECTIONS (63599) //
 //////////////////////////////////////////
-void handleConnections(int server_fd) {
+void handleConnections63599(int server_fd) {
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
 
@@ -438,6 +454,13 @@ void handleConnections(int server_fd) {
             } else if (readable > 0) {
                 // Successfully read data
                 loginfo(buffer63599, true);
+
+                // HEARTBEAT SSH RECEIVED COMMAND
+                if (buffer63599 == "heartbeatSSH") {
+                    timesincelastcheckinSSH.store(time(NULL));
+                    loginfo("HEARTBEAT RECEIVED!", true);
+                }
+
             } else if (readable == -1) {
                 // Handle read error
                 if (errno == EINTR) {
@@ -925,8 +948,8 @@ int setup() {
     }
 
     if (status == 0) {
-        SSHDockerActive = true;
-        lastcheckinSSH = time(NULL) + 10;
+        sshActive.store(1);
+        timesincelastcheckinSSH.store(time(NULL) + 10);
         sendtolog("Done");
     } else {
         status = system(dockerkillguestssh);
@@ -936,12 +959,12 @@ int setup() {
         status = system(dockerstartguestssh);
 
         if (status == 0) {
-            SSHDockerActive = true;
-            lastcheckinSSH = time(NULL) + 10;
+            sshActive.store(1);
+            timesincelastcheckinSSH.store(time(NULL) + 1);
             sendtolog("Done");
         } else {
-            SSHDockerActive = false;
-            lastcheckinSSH = 0;
+            sshActive.store(0);
+            timesincelastcheckinSSH.store(0);
             logcritical("SSH DOCKER DID NOT START SUCCESSFULLY", true);
             startupchecks = startupchecks + 1;
         }
@@ -962,7 +985,7 @@ int setup() {
     loginfo("Creating server thread on port 63599 listen...", false);
 
     sleep(2);
-    std::thread acceptingClientsThread(handleConnections, server63599);
+    std::thread acceptingClientsThread(handleConnections63599, server63599);
     acceptingClientsThread.detach();
     sleep(1);
 
@@ -1041,9 +1064,11 @@ int main() {
 
 
         // WATCHDOG IN MAIN LOOP
-        int differenceintimeSSH = time(NULL) - lastcheckinSSH;
-        if (SSHDockerActive == true) {
-            if (heartbeatreceivedrsttimeSSH == true) {
+        int differenceintimeSSH = time(NULL) - timesincelastcheckinSSH.load();
+        int sshDockerActive = sshActive.load();
+        if (sshDockerActive == 1) {
+            int heartbeatfirsttimeSSH = sshHeartBeatFirstTime.load();
+            if (heartbeatfirsttimeSSH == true) {
                 if (differenceintimeSSH >= 30) {
                     logwarning("30 seconds since last SSH Heartbeat received", true);
                 }
@@ -1051,7 +1076,7 @@ int main() {
                 if (differenceintimeSSH >= 45) {
                     logcritical("45 seconds since last SSH Heartbeat received, assuming dead", true);
                     close(server_fd);
-                    SSHDockerActive = false;
+                    sshActive.store(0);
                     system(dockerkillguestssh);
                     sleep(3);
                     system(dockerremoveguestssh);
@@ -1065,7 +1090,7 @@ int main() {
                 if (differenceintimeSSH >= 300) {
                     logcritical("300 seconds since first expected SSH Heartbeat received, assuming dead", true);
                     close(server_fd);
-                    SSHDockerActive = false;
+                    sshActive.store(0);
                     system(dockerkillguestssh);
                     sleep(3);
                     system(dockerremoveguestssh);
@@ -1077,19 +1102,28 @@ int main() {
             if (timer0.load() != 0) {
                 long long int changeintime = time(NULL) - timer0.load();
 
-                if (changeintime >= 60) {
-                    logwarning("Attempting to restart SSH VM", true);
-                    system(dockerkillguestssh);
-                    sleep(3);
-                    system(dockerremoveguestssh);
-                    sleep(3);
-                    system(dockerstartguestssh);
-                    SSHDockerActive = true;
-                    lastcheckinSSH = time(NULL) + 10;
-                    port1 = createnetworkport63599();
-                    sleep(2);
-                    std::thread acceptingClientsThread(handleConnections, port1);
-                    acceptingClientsThread.detach();
+                if (changeintime >= 60 && lockoutSSH != true) {
+                    int retryattempts = restartatttemptsSSH.load();
+                    if (retryattempts >= maxattemptsSSH) {
+                        lockoutSSH = true;
+                        logcritical("LOCKING OUT SSH FROM STARTING!", true);
+                    } else {
+                        retryattempts = retryattempts + 1;
+                        restartatttemptsSSH.store(retryattempts);
+
+                        logwarning("Attempting to restart SSH VM", true);
+                        system(dockerkillguestssh);
+                        sleep(3);
+                        system(dockerremoveguestssh);
+                        sleep(3);
+                        system(dockerstartguestssh);
+                        sshActive.store(1);
+                        timesincelastcheckinSSH.store(time(NULL) + 10);
+                        int port63599 = createnetworkport63599();
+                        sleep(2);
+                        std::thread acceptingClientsThread(handleConnections63599, port63599);
+                        acceptingClientsThread.detach();
+                    }
                 }
             } else {
                 logwarning("Attempting to restart in 60 seconds!", true);
