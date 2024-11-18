@@ -10,6 +10,7 @@
 #include <thread>
 #include <ctime>
 #include <map>
+#include <netdb.h>
 #include <csignal>                  // DOCKER CATCH SIGNALS
 #include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS! - NEED TO ADD
 #include <atomic>
@@ -366,10 +367,28 @@ void handleSignal(int signal) {
 //// CHECK UPSTREAM SERVER STATUS ////
 //////////////////////////////////////
 int checkserverstatus() {
-    const char* server_ip = "10.72.91.159"; // Server IP address
+    const char* server_ip = "honeypi.baselinux.net"; // Server IP address
+    // ADD CHECK FOR DNS!!!
     const int server_port = 11829;           // Server port number
     const std::string message = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
+    struct addrinfo hints, *res;
 
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(server_ip, nullptr, &hints, &res) != 0) {
+        logcritical("Unable to resolve hostname!", true);
+    }
+
+
+    struct sockaddr_in server_addr;
+    std::memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(server_port);
+    server_addr.sin_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr;
+
+    freeaddrinfo(res);
 
     int serverUpstream = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -377,19 +396,15 @@ int checkserverstatus() {
         std::cerr << "Socket creation failed.\n";
         return 1;
     }
-
-    struct sockaddr_in server_addr;
-    std::memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
-
+/*
     if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
         std::cerr << "Invalid address or address not supported.\n";
         close(serverUpstream);
         return 1;
     }
+*/
 
-    if (connect(serverUpstream, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (connect(serverUpstream, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         std::cerr << "Connection to server failed.\n";
         close(serverUpstream);
         return 1;
@@ -398,20 +413,21 @@ int checkserverstatus() {
     std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
     send(serverUpstream, message.c_str(), message.length(), 0);
     std::cout << "Message sent: " << message << "\n";
-    char bufferread[2048];
-    read(serverUpstream, bufferread, 2048);
+    char bufferread[4096];
+    read(serverUpstream, bufferread, 4096);
+    std::string yup = bufferread;
     close(serverUpstream);
 
-    if (bufferread == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
+    if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
         loginfo("SERVER - Received Valid Connection...", true);
         return 0;
-    } else if (bufferread == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
+    } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
         loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
         return 3;
 
     } else {
         logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
-        std::cout << "RECEIVED:" << bufferread << std::endl;
+        std::cout << "RECEIVED:" << yup << std::endl;
         return 1;
     }
     return 2;
@@ -443,17 +459,18 @@ void handleConnections63599(int server_fd) {
         int new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
 
         if (new_socket > 0) {
-            char buffer63599[1024] = {0};
+            char buffer63599array[4096] = {0};
 
             // Attempt to read data from the client
-            ssize_t readable = read(new_socket, buffer63599, 1024);
+            ssize_t readable = read(new_socket, buffer63599array, 4096);
 
             if (readable == 0) {
                 // Client disconnected gracefully
                 loginfo("Client disconnected", true);
             } else if (readable > 0) {
                 // Successfully read data
-                loginfo(buffer63599, true);
+                loginfo(buffer63599array, true);
+                std::string buffer63599 = buffer63599array;
 
                 // HEARTBEAT SSH RECEIVED COMMAND
                 if (buffer63599 == "heartbeatSSH") {
@@ -461,28 +478,7 @@ void handleConnections63599(int server_fd) {
                     loginfo("HEARTBEAT RECEIVED!", true);
                 }
 
-            } else if (readable == -1) {
-                // Handle read error
-                if (errno == EINTR) {
-                    // Interrupted by signal, just continue
-                    loginfo("Read interrupted by signal, retrying...", true);
-                } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    // Should not happen in blocking mode, but check anyway
-                    loginfo("Read temporarily unavailable, retrying...", true);
-                    sleep(3); // Retry after 3 seconds
-                    readable = read(new_socket, buffer63599, 1024); // Attempt to read again
-                    if (readable == -1) {
-                        logcritical("Read failed again", true);
-                    } else if (readable == 0) {
-                        loginfo("Client disconnected", true);
-                    } else {
-                        loginfo(buffer63599, true);
-                    }
-                } else {
-                    perror("Read failed");
-                    logcritical("Read failed with an error", true);
-                }
-            }
+            } 
 
             close(new_socket);  // Close connection after handling it
         }
@@ -696,7 +692,7 @@ int setup() {
     sendtolog("  |   |     |   |  `   `¯¯¯¯¯¯¯¯¯    /  |   |   `     |  |               |       |     |                |   |             |¯¯¯¯¯     ¯¯¯¯¯|  ");
     sendtolog("  |   |     |   |   `               /   |   |    `    |  |               |       |     |                |   |             |               |  ");
     sendtolog("  ¯¯¯¯¯     ¯¯¯¯¯    ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯    ¯¯¯¯      `¯¯¯   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯        ¯¯¯¯¯¯                 ¯¯¯¯¯             ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯   ");
-    sendtolog("SERVER EDITION!");
+    sendtolog("HoneyPot Edition!");
     sendtolog("");
     sendtolog("");
     sendtolog("");
@@ -1130,7 +1126,6 @@ int main() {
                 timer0.store(time(NULL));
             }
         }
-
     }
 
     // ENCOUNTERED ERRORS
