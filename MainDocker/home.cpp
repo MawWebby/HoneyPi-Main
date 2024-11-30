@@ -755,8 +755,10 @@ int setup() {
         // VALID RESPONSE
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
+        startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
+        
     } else if (checknetworkconnectivitystart == 3) {
         // TEMPORARILY UNAVAILABLE
     } else {
