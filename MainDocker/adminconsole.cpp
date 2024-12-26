@@ -133,18 +133,21 @@ void processCommand(const std::string& command) {
 
     // PING HONEY SERVER
     if (command == "pinghoney") {
-        std::cout << "Pinging the Server..." << std::endl;
-        int checknetworkconnectivitystart = checkserverstatus();
-        if (checknetworkconnectivitystart == 0) {
-            std::cout << "Successful Response Received" << std::endl;
-        } else if (checknetworkconnectivitystart == 1) {
-            std::cout << "The Connection Failed due to a Socket Error! (ERROR 1)" << std::endl;
-            std::cout << "Additional Information may be found in 'logs'" << std::endl;
-        } else if (checknetworkconnectivitystart == 2) {
-            std::cout << "No Valid Response Received (ERROR 2)" << std::endl;
-        } else if (checknetworkconnectivitystart == 3) {
-            std::cout << "Server Temporarily Unavailable..." << std::endl;
+        if (useraccesslevel >= 1) {
+            std::cout << "Pinging the Server..." << std::endl;
+            int checknetworkconnectivitystart = checkserverstatus();
+            if (checknetworkconnectivitystart == 0) {
+                std::cout << "Successful Response Received" << std::endl;
+            } else if (checknetworkconnectivitystart == 1) {
+                std::cout << "The Connection Failed due to a Socket Error! (ERROR 1)" << std::endl;
+                std::cout << "Additional Information may be found in 'logs'" << std::endl;
+            } else if (checknetworkconnectivitystart == 2) {
+                std::cout << "No Valid Response Received (ERROR 2)" << std::endl;
+            } else if (checknetworkconnectivitystart == 3) {
+                std::cout << "Server Temporarily Unavailable..." << std::endl;
+            }
         }
+        foundcommand = true;
     }
 
     // UPDATE COMMAND
