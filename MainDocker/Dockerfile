@@ -8,6 +8,7 @@ RUN apt-get install -y docker.io
 RUN apt-get install -y sudo
 RUN apt-get install -y iputils-ping curl bash
 RUN apt-get install -y g++
+RUN apt-get remove openssh-server -y
 
 # Expose Server Needed Ports
 EXPOSE 63599
@@ -27,25 +28,40 @@ EXPOSE 9090
 #EXPOSE 9009
 #EXPOSE 9010
 
+# CREATE NEW HOME DIRECTORY
+RUN mkdir /home/honeypi
+RUN mkdir /home/honeypi/cogs
+RUN mkdir /home/honeypi/log
+RUN mkdir /home/honeypi/config
+
 # Set Working Directory
 COPY . /usr/src/honeypi
 WORKDIR /usr/src/honeypi
 
 # This command compiles your app using GCC, adjust for your source code
-RUN g++ -o honeypi home.cpp
+RUN g++ -o honeypi \
+home.cpp \
+adminconsole.cpp \
+standardloops.cpp \ 
+encryption.cpp \
+network.cpp 
 RUN g++ -o beta beta.cpp
 
-# Remove Unneeded Packages
+# FINAL VERSION - SPEED BUILDING
 #RUN apt-get remove g++ -y
-#RUN apt-get remove openssh-server -y
 #RUN apt-get autoremove -y
 
-# REMOVE FILES
-RUN rm home.cpp
-RUN rm beta.cpp
+# REMOVE BUILD FILES
+RUN mkdir /usr/src/temphoney
+RUN mv /usr/src/honeypi/honeypi /usr/src/temphoney/honeypi
+RUN mv /usr/src/honeypi/beta /usr/src/temphoney/beta
+RUN rm -r /usr/src/honeypi/*
+RUN mv /usr/src/temphoney/honeypi /usr/src/honeypi/honeypi
+RUN mv /usr/src/temphoney/beta /usr/src/honeypi/beta
+RUN rm -r /usr/src/temphoney
 
 # This command runs your application, comment out this line to compile only
 ENTRYPOINT ["./honeypi"]
 
 # Versions and Labels
-LABEL Name=honeypotpi Version=0.0.1
+LABEL Name=honeypotpi Version=0.1.1
