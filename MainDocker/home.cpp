@@ -1,30 +1,9 @@
-//////////////////
-// Dependencies //
-//////////////////
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <iostream>
-#include <fstream>
-#include <thread>
-#include <ctime>
-#include <map>
-#include <netdb.h>
-#include <csignal>                  // DOCKER CATCH SIGNALS
-#include <fcntl.h>                  // USED FOR NON-BLOCKING SIGNALS! - NEED TO ADD
-#include <atomic>
-#include <iostream>
-#include <string>
-#include <cstring>      // For memset
-#include <sys/socket.h> // For socket functions
-#include <arpa/inet.h>  // For sockaddr_in and inet_pton
-#include <unistd.h>     // For close()
+#include "globalheaders.h"
 
 
-const std::string honeyversion = "0.1.0";
-const bool debug = false;
-const bool testing = false;
+std::string honeyversion = "0.1.0";
+bool debug = false;
+bool testing = false;
 
 
 
@@ -37,6 +16,7 @@ std::atomic<int> updateSIGNAL(0);
 std::atomic<int> serverErrors(0);
 std::atomic<int> sshErrors(0);
 std::atomic<int> sshActive(0);
+std::atomic<int> serverStarted(0);
 std::atomic<int> sshHeartBeatFirstTime(0);
 
 // DELAY VARIABLES
@@ -67,7 +47,7 @@ std::atomic<int> timer10(0);
 /////////////////
 
 // CONSTANT VARIABLES
-const int heartbeattime = 10;
+int heartbeattime = 10;
 
 // SYSTEM VARIABLES
 bool checkforupdates = true;
@@ -115,22 +95,7 @@ bool packetactive = false;
 // TIME VARIABLES
 long long int startuptime = 0;
 long long int currenttime = 0;
-long long int timesincestartup = 0;
-int currenthour = 0;
-int currentminute = 0;
-int currentsecond = 0;
-int currentdayofyear = 0;
-int currentdays = 0;
-int currentyear = 0;
-int currentmonth = 0;
-int secondsperyear = 31536000;
-int daysperyear = 365.25;
-int secondsperday = 86400;
-int secondsperhour = 3600;
-int secondsperminute = 60;
-int minutesperhour = 60;
-int hoursperday = 24;
-bool calculatingtime = false;
+std::atomic<long long int> timesincestartup(0);
 
 // FILE LOCATIONS
 const char* SSHStreamFile = "/home/sshfile.txt";
@@ -240,116 +205,6 @@ const char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 
 
 
-
-
-
-
-int timedetector() {
-    if (calculatingtime == true) {
-        std::cout << "[WARNING] - Call to Time Calculation Called While Already Processing!" << std::endl;
-        return 1;
-
-    }  else {
-        // TIME
-        currenttime = time(NULL);
-
-        // CURRENT SECONDS
-        timesincestartup = currenttime - startuptime;
-        currentsecond = currenttime % secondsperminute;
-
-        // CURRENT MINUTES
-        currentminute = currenttime - currentsecond;
-        currentminute = currentminute % 3600;
-        currentminute = currentminute / 60;
-
-        // CURRENT HOURS
-        currenthour = currenttime - ((currentminute * 60) + currentsecond);
-        currenthour = currenthour % hoursperday;
-        
-        // CURRENT DAYS
-        currentdays = currenttime - ((currenthour * 3600) + (currentminute * 60) + currentsecond);
-        currentdays = currentdays / 86400;
-
-        // CURRENT YEARS
-        currentyear = 1970 + (currentdays / 365.25);
-
-        // DEBUG PRINT VALUES TO CONSOLE
-        if (debug == true) {
-            std::cout << currentsecond << std::endl;
-            std::cout << currentminute << std::endl;
-            std::cout << currenthour << std::endl;
-            std::cout << currentdays << std::endl;
-            std::cout << currentyear << std::endl;
-        }
-
-        return 0;
-    }
-
-    return 1;
-}
-
-
-
-
-
-
-
-
-////////////////////////////
-// Send to Logger Scripts //
-////////////////////////////
-void sendtolog(std::string data2) {
-    std::cout << data2 << std::endl;
-}
-
-void sendtologopen(std::string data2) {
-    std::cout << data2;
-}
-
-void logdebug(std::string data2, bool complete) {
-    data2 = "[DEBUG] - " + data2;
-    if (complete == false) {
-        sendtologopen(data2);
-    } else {
-        sendtolog(data2);
-    }
-}
-
-void loginfo(std::string data2, bool complete) {
-    data2 = "[INFO] - " + data2;
-    if (complete == false) {
-        sendtologopen(data2);
-    } else {
-        sendtolog(data2);
-    }
-}
-
-void logwarning(std::string data2, bool complete) {
-    data2 = "[WARNING] - " + data2;
-    if (complete == false) {
-        sendtologopen(data2);
-    } else {
-        sendtolog(data2);
-    }
-}
-
-void logcritical(std::string data2, bool complete) {
-    data2 = "[CRITICAL] - " + data2;
-    if (complete == false) {
-        sendtologopen(data2);
-    } else {
-        sendtolog(data2);
-    }
-}
-
-void logerror(std::string headerdata2, std::string errormessage) {
-    std::string data2 = "[ERROR] - " + headerdata2 + " - " + errormessage;
-    sendtolog(data2);
-}
-
-
-
-
 ///////////////////////////////
 //// HANDLE DOCKER SIGNALS ////
 ///////////////////////////////
@@ -360,78 +215,6 @@ void handleSignal(int signal) {
     }
 }
 
-
-
-
-//////////////////////////////////////
-//// CHECK UPSTREAM SERVER STATUS ////
-//////////////////////////////////////
-int checkserverstatus() {
-    const char* server_ip = "honeypi.baselinux.net"; // Server IP address
-    // ADD CHECK FOR DNS!!!
-    const int server_port = 11829;           // Server port number
-    const std::string message = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
-    struct addrinfo hints, *res;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if (getaddrinfo(server_ip, nullptr, &hints, &res) != 0) {
-        logcritical("Unable to resolve hostname!", true);
-    }
-
-
-    struct sockaddr_in server_addr;
-    std::memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
-    server_addr.sin_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr;
-
-    freeaddrinfo(res);
-
-    int serverUpstream = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (serverUpstream < 0) {
-        std::cerr << "Socket creation failed.\n";
-        return 1;
-    }
-/*
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        std::cerr << "Invalid address or address not supported.\n";
-        close(serverUpstream);
-        return 1;
-    }
-*/
-
-    if (connect(serverUpstream, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Connection to server failed.\n";
-        close(serverUpstream);
-        return 1;
-    }
-
-    std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
-    send(serverUpstream, message.c_str(), message.length(), 0);
-    std::cout << "Message sent: " << message << "\n";
-    char bufferread[4096];
-    read(serverUpstream, bufferread, 4096);
-    std::string yup = bufferread;
-    close(serverUpstream);
-
-    if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
-        loginfo("SERVER - Received Valid Connection...", true);
-        return 0;
-    } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
-        loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
-        return 3;
-
-    } else {
-        logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
-        std::cout << "RECEIVED:" << yup << std::endl;
-        return 1;
-    }
-    return 2;
-}
 
 int sendverificationtoserver() {
 
@@ -454,9 +237,13 @@ std::string tokenfromserver() {
 void handleConnections63599(int server_fd) {
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
+    int stopsignals = stopSIGNAL.load();
+    int updatesignals = updateSIGNAL.load();
 
-    while (true) {
+    while (stopsignals == 0 && updatesignals == 0) {
         int new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
+        stopsignals = stopSIGNAL.load();
+        updatesignals = updateSIGNAL.load();
 
         if (new_socket > 0) {
             char buffer63599array[4096] = {0};
@@ -472,10 +259,22 @@ void handleConnections63599(int server_fd) {
                 loginfo(buffer63599array, true);
                 std::string buffer63599 = buffer63599array;
 
+                bool found63599 = false;
+
                 // HEARTBEAT SSH RECEIVED COMMAND
                 if (buffer63599 == "heartbeatSSH") {
                     timesincelastcheckinSSH.store(time(NULL));
-                    loginfo("HEARTBEAT RECEIVED!", true);
+                    found63599 = true;
+                }
+
+                std::string header63599 = "";
+                if (found63599 == false && buffer63599.length() >= 4) {
+                    header63599 = buffer63599.substr(0,4);
+                }
+
+                // USER/PASSWORD COMBINATION
+                if (header63599 == "upd:") {
+
                 }
 
             } 
@@ -508,45 +307,14 @@ void handle11535Connections(int server_fd2) {
         loginfo("11535 port initialized", true);
     }
 
-    while(true) {
+    
+    int stopsignals = stopSIGNAL.load();
+    int updatesignals = updateSIGNAL.load();
+    while(stopsignals == 0 && updatesignals == 0) {
         read(new_socket2, buffer, 1024);
         sendtologopen(buffer);
-
-        if (buffer != NULL && attacked == false) {
-
-            // HEARTBEAT COMMAND TO NOT SPAM LOG
-            if (strcmp(buffer, "heartbeatSSH")) {
-                if (heartbeat >= 10) {
-                    loginfo("Received heartbeat from SSH Guest VM", true);
-                } else {
-                    heartbeat = heartbeat + 1;
-                }
-            } 
-
-        } else {
-            if (buffer != NULL && attacked == true) {
-
-            } else {
-                if (buffer == NULL) {
-                    logcritical("INVALID CONNECTION RECEIVED, ignoring...", true);
-                }
-            }
-        }
-
-
-        // ANTI-CRASH PACKET FLOW CHECK
-        if (timer2.load() == time(NULL)) {
-            packetsreceivedAPI = packetsreceivedAPI + 1;
-            if (packetsreceivedAPI >= 10) {
-                // KILL CONTAINER
-                logcritical("PACKET OVERFLOW DETECTED ON ROUTER API!", true);
-                close(server_fd2);
-            }
-        } else {
-            timer2.store(time(NULL));
-            packetsreceivedAPI = 0;
-        }
-
+        stopsignals = stopSIGNAL.load();
+        updatesignals = updateSIGNAL.load();
 
 
  //        Send a hello message to the client
@@ -574,43 +342,6 @@ int createreport() {
 
     sleep(5);
 
-    // OPEN FILE
-    std::ifstream inputStream;
-    inputStream.open(SSHStreamFile);
-    std::ofstream encryptedStream;
-    encryptedStream.open(SSHEncryptedFile);
-    if (inputStream.is_open() != true && encryptedStream.is_open() != true) {
-        logcritical("AN ERROR OCCURRED WITH THE SSH FILE!", true);
-        logcritical("COULD NOT CONTINUE", true);
-        encounterederrors = encounterederrors + 1;
-        return 1;
-        return 1;
-    } else {
-        std::string inputstring;
-        std::string encryptedstring;
-        std::string key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        std::string compressedkey = "zxywv";
-        encryptedStream << compressedkey << '\n';
-        int testtastic = 0;
-        int testtasticmax = 5;
-        bool completion31 = false;
-        while (completion31 != true) {
-            getline(inputStream, inputstring);
-            if (inputstring == "") {
-                testtastic = testtastic + 1;
-                if (testtastic >= testtasticmax) {
-                    completion31 = true;
-                }
-            } else {
-                int hat = 0;
-                while (inputstring.length() >= hat) {
-                    // HAT TWO THIRTY
-                }
-            }
-        }
-
-        // SEND TO SERVER!
-    }
 
     return 1;
 }
@@ -680,6 +411,10 @@ int createnetworkport63599() {
 // THE MAIN SETUP SCRIPTS //
 //////////////////////////// 
 int setup() {
+    startupchecks = system("rm /home/honeypi/logs/log.txt");
+    startupchecks = startupchecks + system("touch /home/honeypi/logs/log.txt");
+
+
     sendtolog("Hello, World from 2515!");
     sendtolog("  _____     _____     ____________      _____      ____  ________________   ____         ____           ______________     ________________  ");
     sendtolog("  |   |     |   |    /            `     |   `      |  |  |               |  `  `        /   /           |             `   |               |  ");
@@ -709,13 +444,6 @@ int setup() {
 
 
 
-    // DELAY FOR SYSTEM TO START FURTHER (FIGURE OUT CURRENT TIME)
-    timedetector();
-    loginfo("Starting", true);
-    sleep(2);
-
-
-
 
     // SET DOCKER CONTAINER OPTIONS
     loginfo("DOCKER - Setting Container Options...", false);
@@ -726,13 +454,9 @@ int setup() {
 
 
 
-
-    startupchecks = startupchecks + timedetector();
-
-
     // DETERMINE NETWORK CONNECTIVITY
     loginfo("Determining Network Connectivity...", false);
-    int learnt = system("ping -c 5 8.8.8.8 > nul:");
+    int learnt = pingnetwork();
 
     if (learnt == 0) {
         sendtolog("Done");
@@ -989,6 +713,13 @@ int setup() {
 
     sendtolog("Done");
 
+
+    // START CONSOLE!
+    sleep(1);
+    std::thread consoleTerminal(interactiveTerminal);
+    consoleTerminal.detach();
+    sleep(1);
+
     
     
     return startupchecks;
@@ -1003,7 +734,7 @@ int main() {
 
     // SETUP LOOP
     int startupc = setup();
-
+    serverStarted.store(1);
     
 
     // STARTUP CHECKS
@@ -1025,18 +756,6 @@ int main() {
         return(1);
     }
 
-    
-
-/*
-    if (testing == true) {
-        loginfo("Beta Testing Active...", false);
-        sleep(1);
-        sendtolog("Nothing to Test");
-    } else {
-        loginfo("Not beta testing/Removing beta file...", true);
-        startupchecks = startupchecks + system("rm test");
-    }
-*/
 
     loginfo("Main HoneyPi has started successfully", true);
     bool runnning = true;
