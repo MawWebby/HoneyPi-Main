@@ -411,8 +411,8 @@ int createnetworkport63599() {
 // THE MAIN SETUP SCRIPTS //
 //////////////////////////// 
 int setup() {
-    startupchecks = system("rm /home/honeypi/logs/log.txt");
-    startupchecks = startupchecks + system("touch /home/honeypi/logs/log.txt");
+    startupchecks = system("rm /home/honeypi/log/log.txt");
+    startupchecks = startupchecks + system("touch /home/honeypi/log/log.txt");
 
 
     sendtolog("Hello, World from 2515!");

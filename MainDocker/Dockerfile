@@ -33,6 +33,7 @@ RUN mkdir /home/honeypi
 RUN mkdir /home/honeypi/cogs
 RUN mkdir /home/honeypi/log
 RUN mkdir /home/honeypi/config
+RUN touch /home/honeypi/log/log.txt
 
 # Set Working Directory
 COPY . /usr/src/honeypi
