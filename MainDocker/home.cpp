@@ -479,9 +479,7 @@ int setup() {
         // VALID RESPONSE
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
-        // FIX THIS
-
-        //startupchecks = startupchecks + 1;
+        startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
         
