@@ -1,7 +1,7 @@
 #include "globalheaders.h"
 
 
-std::string honeyversion = "0.1.0";
+std::string honeyversion = "0.2.0";
 bool debug = false;
 bool testing = false;
 
@@ -479,7 +479,9 @@ int setup() {
         // VALID RESPONSE
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
-        startupchecks = startupchecks + 1;
+        // FIX THIS
+
+        //startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
         
@@ -762,7 +764,7 @@ int main() {
 
 
     // MAIN RUNNING LOOP
-    while(true && startupchecks == 0 && encounterederrors == 0 && runnning == true) {
+    while(startupchecks == 0 && encounterederrors == 0 && runnning == true) {
 
         if (attacked == false) {
             sleep(2);
@@ -880,5 +882,11 @@ int main() {
         loginfo("CALLED TO STOP SERVER!", true);
         sleep(3);
         return 0;
+    } else {
+        loginfo("CALLED TO SHUT DOWN SERVER!", true);
+        loginfo("Waiting for other threads to finish...", true);
+        sleep(3);
+        return 0;
     }
+    return 200;
 }
