@@ -32,6 +32,7 @@ EXPOSE 9090
 RUN mkdir /home/honeypi
 RUN mkdir /home/honeypi/cogs
 RUN mkdir /home/honeypi/log
+RUN touch /home/honeypi/log/log.txt
 RUN mkdir /home/honeypi/config
 RUN touch /home/honeypi/log/log.txt
 
