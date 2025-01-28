@@ -12,17 +12,33 @@ const char* logfile = "/home/honeypi/log/log.txt";
 
 
 
+//////////////////////
+//// TIMER SCRIPT ////
+//////////////////////
+std::string timedetector() {
+    time_t time10 = time(0); 
+    std::string dateandtime = ctime(&time10);
+    std::string datestd = dateandtime.substr(0,10);
+    std::string clockstd = dateandtime.substr(10, 9);
+    std::string yearstd = dateandtime.substr(20,4);
+    std::string newformat = datestd + ", " + yearstd + " " + clockstd;
+    return newformat;
+}
+
+
+
 ////////////////////////////
 // Send to Logger Scripts //
 ////////////////////////////
 void sendtolog(std::string data2) {
     serverStatus = serverStarted.load();
-    stopping = stopSIGNAL.load();
     updating = updateSIGNAL.load();
+    stopping = stopSIGNAL.load();
 
-    if (serverStatus == 0 || stopping == 1 || updating == 1) {
+    if (serverStatus == false || updating == true || stopping == true) {
         std::cout << data2 << std::endl;
-    }
+    } 
+    
     std::ofstream logfilestream;
     logfilestream.open(logfile, std::ofstream::out | std::ofstream::app);
     if (logfilestream.is_open() == true) {
@@ -36,12 +52,13 @@ void sendtolog(std::string data2) {
 
 void sendtologopen(std::string data2) {
     serverStatus = serverStarted.load();
-    stopping = stopSIGNAL.load();
     updating = updateSIGNAL.load();
-    
-    if (serverStatus == 0 || stopping == 1 || updating == 1) {
+    stopping = stopSIGNAL.load(); 
+
+    if (serverStatus == false || updating == true || stopping == true) {
         std::cout << data2;
-    }
+    } 
+    
     std::ofstream logfilestream;
     logfilestream.open(logfile, std::ofstream::out | std::ofstream::app);
     if (logfilestream.is_open() == true) {
@@ -54,7 +71,8 @@ void sendtologopen(std::string data2) {
 }
 
 void logdebug(std::string data2, bool complete) {
-    data2 = "[DEBUG] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[DEBUG] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -63,7 +81,8 @@ void logdebug(std::string data2, bool complete) {
 }
 
 void loginfo(std::string data2, bool complete) {
-    data2 = "[INFO] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[INFO ] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -72,7 +91,8 @@ void loginfo(std::string data2, bool complete) {
 }
 
 void logwarning(std::string data2, bool complete) {
-    data2 = "[WARNING] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[WARN*] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -81,7 +101,8 @@ void logwarning(std::string data2, bool complete) {
 }
 
 void logcritical(std::string data2, bool complete) {
-    data2 = "[CRITICAL] - " + data2;
+    std::string timedet = timedetector();
+    data2 = "[ERRNO] - " + timedet + " - " + data2;
     if (complete == false) {
         sendtologopen(data2);
     } else {
@@ -90,17 +111,17 @@ void logcritical(std::string data2, bool complete) {
 }
 
 void logerror(std::string headerdata2, std::string errormessage) {
-    std::string data2 = "[ERROR] - " + headerdata2 + " - " + errormessage;
+    std::string timedet = timedetector();
+    std::string data2 = "[ERROR] - " + timedet + " - " + headerdata2 + " - " + errormessage;
     sendtolog(data2);
 }
 
 
 
 
-
-//////////////////////////////
-// READ FROM Logger Scripts //
-//////////////////////////////
+/////////////////////////////////
+//// READ FROM LOGGER SRIPTS ////
+/////////////////////////////////
 void readfromlogger() {
     std::ifstream logfilestream;
     logfilestream.open(logfile);
@@ -115,22 +136,6 @@ void readfromlogger() {
         std::cout << "[ERRO] - COULD NOT OPEN LOGFILE!" << std::endl;
     }
     logfilestream.close();
-}
-
-
-
-
-//////////////////////
-//// TIMER SCRIPT ////
-//////////////////////
-std::string timedetector() {
-    time_t time10 = time(0); 
-    std::string dateandtime = ctime(&time10);
-    std::string datestd = dateandtime.substr(0,10);
-    std::string clockstd = dateandtime.substr(10, 9);
-    std::string yearstd = dateandtime.substr(20,4);
-    std::string newformat = datestd + ", " + yearstd + " " + clockstd;
-    return newformat;
 }
 
 
@@ -226,6 +231,286 @@ int stringtoint(std::string values) {
 
     return valuesdetermine;
 }
+
+
+//////////////////////////////////
+//// INT TO STRING CONVERSION //// 
+//////////////////////////////////
+std::string inttostring(int value) {
+    std::string returnvalue = "";
+    bool single = false;
+    bool doublenum = false;
+    bool triple = false;
+    bool quad = false;
+    bool penta = false;
+    bool hexa = false;
+
+    // DETERMINE CASE
+    if (value < 9) {
+        single = true;
+        doublenum = false;
+        triple = false;
+        quad = false;
+        penta = false;
+        hexa = false;
+    } else if (value < 99) {
+        single = true;
+        doublenum = true;
+        triple = false;
+        quad = false;
+        penta = false;
+        hexa = false;
+    } else if (value < 999) {
+        single = true;
+        doublenum = true;
+        triple = true;
+        quad = false;
+        penta = false;
+        hexa = false;
+    } else if (value < 9999) {
+        single = true;
+        doublenum = true;
+        triple = true;
+        quad = true;
+        penta = false;
+        hexa = false;
+    } else if (value < 99999) {
+        single = true;
+        doublenum = true;
+        triple = true;
+        quad = true;
+        penta = true;
+        hexa = false;
+    } else if (value < 999999) {
+        single = true;
+        doublenum = true;
+        triple = true;
+        quad = true;
+        penta = true;
+        hexa = true;
+    }
+
+    // START WORK ON EACH CASE
+    if (single == true) {
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0";
+                break;
+            case 1:
+                returnvalue = "1";
+                break;
+            case 2:
+                returnvalue = "2";
+                break;
+            case 3:
+                returnvalue = "3";
+                break;
+            case 4:
+                returnvalue = "4";
+                break;
+            case 5:
+                returnvalue = "5";
+                break;
+            case 6:
+                returnvalue = "6";
+                break;
+            case 7:
+                returnvalue = "7";
+                break;
+            case 8:
+                returnvalue = "8";
+                break;
+            case 9:
+                returnvalue = "9";
+                break;
+        }
+    }
+    if (doublenum == true) {
+        value = value / 10;
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0" + returnvalue;
+                break;
+            case 1:
+                returnvalue = "1" + returnvalue;
+                break;
+            case 2:
+                returnvalue = "2" + returnvalue;
+                break;
+            case 3:
+                returnvalue = "3" + returnvalue;
+                break;
+            case 4:
+                returnvalue = "4" + returnvalue;
+                break;
+            case 5:
+                returnvalue = "5" + returnvalue;
+                break;
+            case 6:
+                returnvalue = "6" + returnvalue;
+                break;
+            case 7:
+                returnvalue = "7" + returnvalue;
+                break;
+            case 8:
+                returnvalue = "8" + returnvalue;
+                break;
+            case 9:
+                returnvalue = "9" + returnvalue;
+                break;
+        }
+    }
+    if (triple == true) {
+        value = value / 10;
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0" + returnvalue;
+                break;
+            case 1:
+                returnvalue = "1" + returnvalue;
+                break;
+            case 2:
+                returnvalue = "2" + returnvalue;
+                break;
+            case 3:
+                returnvalue = "3" + returnvalue;
+                break;
+            case 4:
+                returnvalue = "4" + returnvalue;
+                break;
+            case 5:
+                returnvalue = "5" + returnvalue;
+                break;
+            case 6:
+                returnvalue = "6" + returnvalue;
+                break;
+            case 7:
+                returnvalue = "7" + returnvalue;
+                break;
+            case 8:
+                returnvalue = "8" + returnvalue;
+                break;
+            case 9:
+                returnvalue = "9" + returnvalue;
+                break;
+        }
+    }
+    if (quad == true) {
+        value = value / 10;
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0" + returnvalue;
+                break;
+            case 1:
+                returnvalue = "1" + returnvalue;
+                break;
+            case 2:
+                returnvalue = "2" + returnvalue;
+                break;
+            case 3:
+                returnvalue = "3" + returnvalue;
+                break;
+            case 4:
+                returnvalue = "4" + returnvalue;
+                break;
+            case 5:
+                returnvalue = "5" + returnvalue;
+                break;
+            case 6:
+                returnvalue = "6" + returnvalue;
+                break;
+            case 7:
+                returnvalue = "7" + returnvalue;
+                break;
+            case 8:
+                returnvalue = "8" + returnvalue;
+                break;
+            case 9:
+                returnvalue = "9" + returnvalue;
+                break;
+        }
+    }
+    if (penta == true) {
+        value = value / 10;
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0" + returnvalue;
+                break;
+            case 1:
+                returnvalue = "1" + returnvalue;
+                break;
+            case 2:
+                returnvalue = "2" + returnvalue;
+                break;
+            case 3:
+                returnvalue = "3" + returnvalue;
+                break;
+            case 4:
+                returnvalue = "4" + returnvalue;
+                break;
+            case 5:
+                returnvalue = "5" + returnvalue;
+                break;
+            case 6:
+                returnvalue = "6" + returnvalue;
+                break;
+            case 7:
+                returnvalue = "7" + returnvalue;
+                break;
+            case 8:
+                returnvalue = "8" + returnvalue;
+                break;
+            case 9:
+                returnvalue = "9" + returnvalue;
+                break;
+        }
+    }
+    if (hexa == true) {
+        value = value / 10;
+        int numbertech = value % 10;
+        switch (numbertech) {
+            case 0:
+                returnvalue = "0" + returnvalue;
+                break;
+            case 1:
+                returnvalue = "1" + returnvalue;
+                break;
+            case 2:
+                returnvalue = "2" + returnvalue;
+                break;
+            case 3:
+                returnvalue = "3" + returnvalue;
+                break;
+            case 4:
+                returnvalue = "4" + returnvalue;
+                break;
+            case 5:
+                returnvalue = "5" + returnvalue;
+                break;
+            case 6:
+                returnvalue = "6" + returnvalue;
+                break;
+            case 7:
+                returnvalue = "7" + returnvalue;
+                break;
+            case 8:
+                returnvalue = "8" + returnvalue;
+                break;
+            case 9:
+                returnvalue = "9" + returnvalue;
+                break;
+        }
+    }
+    return returnvalue;
+}
+
+
+
 
 
 /////////////////////////////////////
