@@ -35,7 +35,7 @@ void sendtolog(std::string data2) {
     updating = updateSIGNAL.load();
     stopping = stopSIGNAL.load();
 
-    if (serverStatus == false || updating == true || stopping == true) {
+    if (serverStatus == false || updating == true || stopping == true || bypassterminal == true) {
         std::cout << data2 << std::endl;
     } 
     
@@ -55,7 +55,7 @@ void sendtologopen(std::string data2) {
     updating = updateSIGNAL.load();
     stopping = stopSIGNAL.load(); 
 
-    if (serverStatus == false || updating == true || stopping == true) {
+    if (serverStatus == false || updating == true || stopping == true || bypassterminal == true) {
         std::cout << data2;
     } 
     

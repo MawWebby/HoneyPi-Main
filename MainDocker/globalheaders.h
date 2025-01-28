@@ -40,6 +40,7 @@ extern std::atomic<int> sshHeartBeatFirstTime;
 extern std::atomic<long long int> timesincelastcheckinSSH;
 extern std::atomic<int> restartatttemptsSSH;
 extern std::atomic<long long int> timesincestartup;
+extern bool bypassterminal;
 
 // UPDATE VARIABLES
 extern std::string updatesforHONEYPI;
