@@ -4,6 +4,7 @@
 std::string honeyversion = "0.2.0";
 bool debug = false;
 bool testing = false;
+bool bypassterminal = true;
 
 
 
@@ -218,14 +219,18 @@ void handleSignal(int signal) {
 
 int sendverificationtoserver() {
 
+    return 0;
 }
 
 bool checkforupdatesfromserver() {
     
+    return false;
 }
 
 std::string tokenfromserver() {
 
+
+    return "OK";
 }
 
 
@@ -713,15 +718,35 @@ int setup() {
 
     sendtolog("Done");
 
+    // STARTUP CHECKS
+    if (startupchecks != 0) {
+        logcritical("STARTUP CHECKS RETURNED EXIT CODE 1", true);
+        logcritical("THE SYSTEM COULD NOT CONTINUE!", true);
+        logcritical("ALL DOCKER CONTAINERS WILL BE STOPPED", true);
+
+        // ADD FUTURE DOCKER CONTAINER INFORMATION
+        close(serverport1);
+        close(serverport2);
+        sleep(10);
+        //int completion = system("docker kill * > nul:");
+        sleep(10);
+
+        // EXIT AND STOP PROCESSES
+        return(1);
+        return(1);
+        return(1);
+    }
+
 
     // START CONSOLE!
-    sleep(1);
-    std::thread consoleTerminal(interactiveTerminal);
-    consoleTerminal.detach();
-    sleep(1);
+    if (bypassterminal == false) {
+        sleep(1);
+        std::thread consoleTerminal(interactiveTerminal);
+        consoleTerminal.detach();
+        sleep(1);
+    }
+    
 
-    
-    
     return startupchecks;
 }
 
