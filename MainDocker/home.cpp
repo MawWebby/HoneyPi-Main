@@ -416,6 +416,7 @@ int createnetworkport63599() {
 // THE MAIN SETUP SCRIPTS //
 //////////////////////////// 
 int setup() {
+    // START LOG LOOP
     startupchecks = system("rm /home/honeypi/log/log.txt");
     startupchecks = startupchecks + system("touch /home/honeypi/log/log.txt");
 
@@ -480,28 +481,28 @@ int setup() {
     // CHECK UPSTREAM SERVER STATUS
     int checknetworkconnectivitystart = checkserverstatus();
 
+    // CASES
     if (checknetworkconnectivitystart == 0) {
         // VALID RESPONSE
+        // CONTINUE
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
         startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
-        
+        startupchecks = startupchecks + 2;
     } else if (checknetworkconnectivitystart == 3) {
         // TEMPORARILY UNAVAILABLE
+        // CONTINUE
+    } else if (checknetworkconnectivitystart == 4) {
+        // RECEIVED REJECTION
+        //FIX THIS ON SERVER SIDE
+        //startupchecks = startupchecks + 1;
     } else {
         // UNCAUGHT EXCEPTION
+        startupchecks = startupchecks + 5;
     }
-
-
-
-    loginfo("Verifying System...", false);
-
-    // FUTURE LOOP OF INTEGRITY
-
-    sendtolog("DONE (no checks needed)");
-    
+  
 
 
 
@@ -666,35 +667,44 @@ int setup() {
     // START GUEST DOCKER CONTAINER FOR SSH
     loginfo("Starting Guest Docker Container (SSH) - ", false);
     sleep(2);
-    int status;
 
-    if (debug == true) {
-        status = system(dockerstartguestsshNOREMOVE);
-    } else {
-        status = system(dockerstartguestssh);
-    }
+    if (startupchecks == 0) {
+        int status;
 
-    if (status == 0) {
-        sshActive.store(1);
-        timesincelastcheckinSSH.store(time(NULL) + 10);
-        sendtolog("Done");
-    } else {
-        status = system(dockerkillguestssh);
-        sleep(3);
-        status = system(dockerremoveguestssh);
-        sleep(1);
-        status = system(dockerstartguestssh);
+        if (debug == true) {
+            status = system(dockerstartguestsshNOREMOVE);
+        } else {
+            status = system(dockerstartguestssh);
+        }
 
         if (status == 0) {
             sshActive.store(1);
-            timesincelastcheckinSSH.store(time(NULL) + 1);
+            timesincelastcheckinSSH.store(time(NULL) + 10);
             sendtolog("Done");
         } else {
-            sshActive.store(0);
-            timesincelastcheckinSSH.store(0);
-            logcritical("SSH DOCKER DID NOT START SUCCESSFULLY", true);
-            startupchecks = startupchecks + 1;
+            status = system(dockerkillguestssh);
+            sleep(3);
+            status = system(dockerremoveguestssh);
+            sleep(1);
+            status = system(dockerstartguestssh);
+
+            if (status == 0) {
+                sshActive.store(1);
+                timesincelastcheckinSSH.store(time(NULL) + 1);
+                sendtolog("Done");
+            } else {
+                sshActive.store(0);
+                timesincelastcheckinSSH.store(0);
+                logcritical("SSH DOCKER DID NOT START SUCCESSFULLY", true);
+                startupchecks = startupchecks + 1;
+            }
         }
+    } else {
+        logcritical("", true);
+        logcritical("STARTUP CHECKS DID NOT RETURN 0!", true);
+        logcritical("", true);
+        logcritical("NOT STARTING GUEST DOCKERS!", true);
+        std::cout << "RETURNED VALUE OF: " << startupchecks << std::endl;
     }
 
 
