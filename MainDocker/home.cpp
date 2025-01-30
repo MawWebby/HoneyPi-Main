@@ -4,7 +4,7 @@
 std::string honeyversion = "0.2.0";
 bool debug = false;
 bool testing = false;
-bool bypassterminal = true;
+bool bypassterminal = false;
 
 
 
