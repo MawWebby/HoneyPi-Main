@@ -747,15 +747,20 @@ int setup() {
         return(1);
     }
 
+    std::thread adminConsole(interactiveTerminal);
+    adminConsole.detach();
+
 
     // START CONSOLE!
+    /*
     if (bypassterminal == false) {
         sleep(1);
         std::thread consoleTerminal(interactiveTerminal);
         consoleTerminal.detach();
         sleep(1);
     }
-    
+    */
+
 
     return startupchecks;
 }
