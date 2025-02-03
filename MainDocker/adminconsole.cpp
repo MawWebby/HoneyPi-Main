@@ -7,9 +7,7 @@ int useraccesslevel = 0;
 
 
 // USER LEVELS
-// USER 3 - MASTER USER
-// USER 2 - EDIT DB/ MAINTAIN SERVER
-// USER 1 - ACTIVATE 
+// USER 1 - USER 
 // USER 0 - TEST COMMANDS ON SERVER
 
 int currentimunte;
@@ -36,12 +34,6 @@ std::string terminalinput(bool sensitive) {
                     break;
                 case 1:
                     std::cout << "user >> ";
-                    break;
-                case 2:
-                    std::cout << "admin >> ";
-                    break;
-                case 3:
-                    std::cout << "sudo >> ";
                     break;
             }
             std::cout << previouscommand << std::endl;
@@ -305,6 +297,7 @@ void interactiveTerminal() {
     std::cout << std::endl;
     std::cout << std::endl;
 
+    // MAIN RUNNING LOOP FOR CONSOLE
     while (true) {
         std::string command;
         switch (useraccesslevel) {
@@ -315,10 +308,13 @@ void interactiveTerminal() {
                 std::cout << "admin >> ";
                 break;
         }
-        command = terminalinput(false);
-        sendtolog("[CONSOLE] - Received Command: " + command);
 
+        // TERMINAL INPURT FOR COMMAND
+        command = terminalinput(false);
+        
+        // PROCESS COMMAND IF NOT NULL
         if (command.empty() != true) {
+            sendtolog("[CONSOLE] - " + timedetector() + " - Received Command: " + command);
             processCommand(command);
         }
     }
