@@ -3,9 +3,10 @@
 
 std::string honeyversion = "0.2.0";
 bool debug = false;
+bool beta = true;
 bool testing = false;
 bool bypassterminal = false;
-
+std::string tokenID = "";
 
 
 ////////////////////////
@@ -195,13 +196,13 @@ std::map<int, bool> serverportsactive = {
 ////////////////////////////////
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
-const char* dockerstatuscommand = "docker ps > nul:";
-const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+char* dockerstatuscommand = "docker ps > nul:";
+char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
 //const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
 //const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-const char* dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
-const char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
+char* dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
+char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 
 
 
@@ -272,21 +273,22 @@ void handleConnections63599(int server_fd) {
                     found63599 = true;
                 }
 
-                std::string header63599 = "";
-                if (found63599 == false && buffer63599.length() >= 4) {
-                    header63599 = buffer63599.substr(0,4);
+                // PACKET TO SEND TO REPORT
+                if (found63599 == false && buffer63599.length() >= 5) {
+                    if (buffer63599.substr(3,1) == ":") {
+                        std::cout << "TRUE" << std::endl;
+                        int returntype = reportreceiveSSH(buffer63599);
+                        if (returntype < 0) {
+                            logcritical("INVALID PACKET RECEIVED!", true);
+                            logcritical("RECEIVED: " + buffer63599, true);
+                        }
+                    }
                 }
-
-                // USER/PASSWORD COMBINATION
-                if (header63599 == "upd:") {
-
-                }
-
             } 
-
             close(new_socket);  // Close connection after handling it
         }
     }
+    return;
 }
 
 
