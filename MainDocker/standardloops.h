@@ -18,6 +18,8 @@ void readfromlogger();
 
 // TIME DETECTOR
 std::string timedetector();
+std::string refreshDate();
+std::string refreshTime();
 
 // CONVERSIONS
 int stringtoint(std::string);
@@ -27,5 +29,9 @@ std::string generateToken();
 
 // PING NETWORK
 int pingnetwork();
+
+// INT TO STRING
+std::string inttostring(int);
+
 
 #endif
