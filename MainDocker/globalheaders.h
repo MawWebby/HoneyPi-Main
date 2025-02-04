@@ -41,9 +41,14 @@ extern std::atomic<long long int> timesincelastcheckinSSH;
 extern std::atomic<int> restartatttemptsSSH;
 extern std::atomic<long long int> timesincestartup;
 extern bool bypassterminal;
+extern std::string tokenID;
+extern bool beta;
 
 // UPDATE VARIABLES
 extern std::string updatesforHONEYPI;
 
 // SERVER VERSION
 extern std::string honeyversion;
+
+// COMMANDS FOR DOCKER
+extern char* dockerkillguestssh;
