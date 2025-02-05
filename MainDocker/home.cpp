@@ -276,7 +276,6 @@ void handleConnections63599(int server_fd) {
                 // PACKET TO SEND TO REPORT
                 if (found63599 == false && buffer63599.length() >= 5) {
                     if (buffer63599.substr(3,1) == ":") {
-                        std::cout << "TRUE" << std::endl;
                         int returntype = reportreceiveSSH(buffer63599);
                         if (returntype < 0) {
                             logcritical("INVALID PACKET RECEIVED!", true);
@@ -341,27 +340,13 @@ void handle8080Connections(int server_fd3) {
 
 
 
-//////////////////////////////
-// REPORT GENERATING SCRIPT //
-//////////////////////////////
-int createreport() {
-    logwarning("CREATING REPORT (THIS COULD TAKE SEVERAL MINUTES!)", true);
-
-    sleep(5);
-
-
-    return 1;
-}
 
 
 
 
-
-
-
-
-
-
+//////////////////////////////////////////
+// CREATE NETWORKED CONNECTIONS (63599) // 
+//////////////////////////////////////////
 int createnetworkport63599() {
     int PORT = 63599;
     int server_fd, new_socket;
@@ -811,10 +796,6 @@ int main() {
         } else {
             sleep(0.25);
             logwarning("Guest VM has been attacked, reporting...", true);
-        }
-
-        if (generatingreportSSH == true) {
-            encounterederrors = encounterederrors + createreport();
         }
 
         if (stopSIGNAL.load() == 1) {
