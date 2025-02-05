@@ -58,6 +58,12 @@ std::string tempforpassmap = "";
 char doublequote = '"';
 
 
+// MAP FOR PACKETS TO SEND WITH DATA
+int totalnumberofpackets = 0;
+std::map<int, std::string> alldataofreport;
+int packetsize = 1000;
+
+
 
 
 //////////////////////////////////////
@@ -102,7 +108,7 @@ int checkserverstatus() {
     }
 
     // PROCESS READ
-    std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
+    //std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
     send(serverUpstream, message.c_str(), message.length(), 0);
     char bufferread[4096];
     read(serverUpstream, bufferread, 4096);
@@ -125,6 +131,223 @@ int checkserverstatus() {
         return 1;
     }
     return 2;
+}
+
+
+
+
+//////////////////////////////////
+///// CLEAR REPORT FROM MAPS /////
+//////////////////////////////////
+int clearmaps(bool actually) {
+    if (actually == false) {
+        return 0;
+        return 0;
+    } else {
+        // CLEAR ALL MAPS AND VARIABLES
+        usppairmap.clear();
+        pwdpairmap.clear();
+        usemap.clear();
+        passmap.clear();
+        multipleips = false;
+        singleips = false;
+        ipaddrmap.clear();
+        fincomplete = false;
+        commandrunmap.clear();
+        fileviewmap.clear();
+        filechangemap.clear();
+        fileeditmap.clear();
+        singlemultimode = 0;
+        extraoptmap.clear();
+        extraopt1 = 0;
+        extraopt2 = 0;
+        extraopt3 = 0;
+        extraopt4 = 0;
+        extraopt5 = 0;
+        extraopt6 = 0;
+        extraopt7 = false;
+        extraopt8 = false;
+        extraopt9 = false;
+        extraopt10 = false;
+        extraopt11 = false;
+        sshguestversion = "";
+        reportVersion = "";
+        commandsblockedmap.clear();
+        commandsranmap.clear();
+        testreport = false;
+        usppairmapnum = 0;
+        pwdpairmapnum = 0;
+        usemapnum = 0;
+        passmapnum = 0;
+        ipaddrmapnum = 0;
+        commandrunmapnum = 0;
+        fileviewmapnum = 0;
+        filechangemapnum = 0;
+        fileeditmapnum = 0;
+        extraoptmapnum = 0;
+        commandsblockedmapnum = 0;
+        commandsranmapnum = 0;
+        tempforpassmap = "";
+        totalnumberofpackets = 0;
+        alldataofreport.clear();
+        return 0;
+        return 0;
+    }
+    return -1;
+}
+
+
+
+
+///////////////////////////////////
+///// CREATE REPORT FROM MAPS /////
+///////////////////////////////////
+std::string createreport() {
+    if (fincomplete != true) {
+        return "ERROR";
+        return "ERROR";
+    }
+
+    std::string currentDate = refreshDate();
+    std::string currentTime = refreshTime();
+
+    // COMPILE THE REPORT LINE BY LINE
+    std::string stringcreate = "// REPORT";
+    stringcreate = stringcreate + "\n\n";
+    stringcreate = stringcreate + "// MISC." + "\n";
+    stringcreate = stringcreate + "tokenID = " + doublequote;
+    stringcreate = stringcreate + tokenID + doublequote + "\n";
+    stringcreate = stringcreate + "reportV = 1" + "\n";
+    stringcreate = stringcreate + "testflight = " + inttostring(beta) + "\n";
+    stringcreate = stringcreate + "testreport = " + inttostring(testreport) + "\n";
+    stringcreate = stringcreate + "versionreporting = " + honeyversion + "\n";
+    stringcreate = stringcreate + "guestreporting = " + sshguestversion + "\n";
+    stringcreate = stringcreate + "date = " + doublequote + currentDate + doublequote + "\n";
+    stringcreate = stringcreate + "time = " + doublequote + currentTime + doublequote + "\n";
+    stringcreate = stringcreate + "method = SSH" + "\n";
+    stringcreate = stringcreate + "partofDDOS = " + inttostring(multipleips) + "\n";
+    stringcreate = stringcreate + "complete = " + inttostring(fincomplete) + "\n";
+    stringcreate = stringcreate + "option1 = " + inttostring(extraopt1) + "\n";
+    stringcreate = stringcreate + "option2 = " + inttostring(extraopt2) + "\n";
+    stringcreate = stringcreate + "option3 = " + inttostring(extraopt3) + "\n";
+    stringcreate = stringcreate + "option4 = " + inttostring(extraopt4) + "\n";
+    stringcreate = stringcreate + "option5 = " + inttostring(extraopt5) + "\n";
+    stringcreate = stringcreate + "option6 = " + inttostring(extraopt6) + "\n";
+    stringcreate = stringcreate + "option7 = " + inttostring(extraopt7) + "\n";
+    stringcreate = stringcreate + "option8 = " + inttostring(extraopt8) + "\n";
+    stringcreate = stringcreate + "option9 = " + inttostring(extraopt9) + "\n";
+    stringcreate = stringcreate + "option10 = " + inttostring(extraopt10) + "\n";
+    stringcreate = stringcreate + "option11 = " + inttostring(extraopt11) + "\n";
+    stringcreate = stringcreate + "\n\n";
+    stringcreate = stringcreate + "//////////////////////////" + "\n";
+    stringcreate = stringcreate + "// ATTEMPT COMBINATIONS //" + "\n";
+    stringcreate = stringcreate + "usercombo = {" + "\n";
+    if (usppairmapnum != 0 && pwdpairmapnum != 0) {
+        int ordertwo = 0;
+        while (ordertwo < usppairmapnum || ordertwo < pwdpairmapnum) {
+            stringcreate = stringcreate + "(" + usppairmap[ordertwo] + ";[$]: " + pwdpairmap[ordertwo] + ")" + "\n";
+            ordertwo = ordertwo + 1;
+        }
+    } else if (usppairmapnum != 0 && pwdpairmapnum == 0) {
+        usemap[usemapnum] = usppairmap[usppairmapnum];
+        usemapnum = usemapnum + 1;
+    } else if (usppairmapnum == 0 && pwdpairmapnum != 0) {
+        passmap[passmapnum] = pwdpairmap[pwdpairmapnum];
+        passmapnum = passmapnum + 1;
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "//////////////////////" + "\n";
+    stringcreate = stringcreate + "// TERMINAL PROCESS //" + "\n";
+    stringcreate = stringcreate + "commandprocess = {" + "\n";
+    if (commandrunmapnum != 0) {
+        int commandoption = 0;
+        while (commandoption < commandrunmapnum) {
+            stringcreate = stringcreate + doublequote + commandrunmap[commandoption] + doublequote + "\n";
+            commandoption = commandoption + 1;
+        }
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "////////////////////" + "\n"; 
+    stringcreate = stringcreate + "// FILES AFFECTED //" + "\n";
+    stringcreate = stringcreate + "files = {" + "\n";
+    if (fileviewmapnum != 0) {
+        int filevieworder = 0;
+        while (filevieworder < fileviewmapnum) {
+            stringcreate = stringcreate + doublequote + fileviewmap[filevieworder] + doublequote + "\n";
+            filevieworder = filevieworder + 1;   
+        }
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "//////////////////////////" + "\n";
+    stringcreate = stringcreate + "// FILECHANGES AFFECTED //" + "\n";
+    stringcreate = stringcreate + "filechanges = {" + "\n";
+    if (fileeditmapnum != 0) {
+        int fileeditorder = 0;
+        while (fileeditorder < fileeditmapnum) {
+            stringcreate = stringcreate + doublequote + fileeditmap[fileeditorder] + doublequote + "\n";
+            fileeditorder = fileeditorder + 1;
+        }
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "////////////////////" + "\n";
+    stringcreate = stringcreate + "// ALL IPS PINGED //" + "\n";
+    stringcreate = stringcreate + "ipaddr = {" + "\n";
+    if (ipaddrmapnum != 0) {
+        int ipaddroption = 0;
+        while (ipaddroption < ipaddrmapnum) {
+            stringcreate = stringcreate + doublequote + ipaddrmap[ipaddroption] + doublequote + "\n";
+            ipaddroption = ipaddroption + 1;
+        }
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "/////////////" + "\n";
+    stringcreate = stringcreate + "// option1 //" + "\n";
+    stringcreate = stringcreate + "extraopt = {" + "\n";
+    if (extraoptmapnum != 0) {
+        int runningoption = 0;
+        while (runningoption < extraoptmapnum) {
+            stringcreate = stringcreate + doublequote + extraoptmap[runningoption] + doublequote + "\n";
+            runningoption = runningoption + 1;
+        }
+    }
+    stringcreate = stringcreate + "}" + "\n\n";
+    stringcreate = stringcreate + "END";
+
+    return stringcreate;
+}
+
+
+
+
+////////////////////////////////////////////////////////
+//// SPLIT REPORT INTO MULTIPLE PACKETS FOR SENDING ////
+////////////////////////////////////////////////////////
+int splitreportintopack(std::string data1) {
+    if (data1 == "") {
+        // NULL STRING RECEIVED/IGNORE
+        return -1;
+        return -1;
+    }
+
+    alldataofreport.clear();
+    totalnumberofpackets = 0;
+
+    if (data1.length() <= packetsize) {
+        alldataofreport[totalnumberofpackets] = data1;
+        totalnumberofpackets = totalnumberofpackets + 1;
+    } else if (data1.length() > packetsize) {
+        int multiplier = 0;
+        while (data1.length() > (multiplier + 1) * packetsize) {
+            alldataofreport[multiplier] = data1.substr((multiplier * packetsize), packetsize);
+            multiplier = multiplier + 1;
+        }
+        alldataofreport[multiplier] = data1.substr((multiplier * packetsize), (data1.length() - (multiplier * packetsize)));
+        return 0;
+    } else {
+        return -2;
+        return -2;
+    }
+    return 0;
 }
 
 
@@ -171,11 +394,14 @@ int checkserverstatus() {
 int reportreceiveSSH(std::string data1) {
     std::string header1 = "";
     if (data1.length() >= 5) {
-        header1 == data1.substr(0,3);
+        header1 = data1.substr(0,3);
     } else {
         return -2;
     }
-    
+
+    if (beta == true) {
+        loginfo("HEAD" + header1, true);
+    }
     
     // MAIN CONVERSION TYPE
     if (header1 == "US1") {
@@ -217,11 +443,27 @@ int reportreceiveSSH(std::string data1) {
         if (completionstatus == "true") {
             fincomplete = true;
             std::string compiledreport = createreport();
+            std::cout << "REPORT" << std::endl;
+            std::string encryptstring = ucrypt_Ecrypt(compiledreport);
+            int resultantvec = splitreportintopack(encryptstring);
+            std::cout << compiledreport << std::endl;
+            
+            
+            
+            
+            
             // SEND REPORT TO SERVER
+
+
+
+
+
+
+
         } else {
             fincomplete = false;
         }
-    } else if (header1 == "CWD") {
+    } else if (header1 == "CMD") {
         std::string commandran = data1.substr(5, data1.length() - 5);
         commandrunmap[commandrunmapnum] = commandran;
         commandrunmapnum = commandrunmapnum + 1;
@@ -323,6 +565,8 @@ int reportreceiveSSH(std::string data1) {
         std::string watchdogkillcontainer = data1.substr(5, data1.length() - 5);
         if (watchdogkillcontainer == "false") {
             logwarning("Received Packet to Stop Container but packet said false?", true);
+        } else if (watchdogkillcontainer == "test") {
+            // CONTINUE (EDGE CASE)
         } else {
             int killguest = system(dockerkillguestssh);
         }
@@ -331,6 +575,8 @@ int reportreceiveSSH(std::string data1) {
         std::string watchdogkillcontainer = data1.substr(5, data1.length() - 5);
         if (watchdogkillcontainer == "false") {
             logwarning("Received Packet to Kill Container but packet said false?", true);
+        } else if (watchdogkillcontainer == "test") {
+            // CONTINUE (EDGE CASE)
         } else {
             logcritical("RECEIVED COMMAND TO TERMINATE SSH SESSION!!!", true);
             logcritical("REMOVING ALL CONTAINERS AND CLOSING ALL PORTS!!!", true);
@@ -362,14 +608,14 @@ int reportreceiveSSH(std::string data1) {
         
     } else if (header1 == "TES") {
         std::string testerport = data1.substr(5, data1.length() - 5);
-        if (testerport == "true") {
+        if (testerport == "true" || testerport == "test") {
             testreport = true;
         } else {
             testreport = false;
         }
     } else if (header1 == "FTE") {
         std::string finishtestreport = data1.substr(5, data1.length() - 5);
-        if (finishtestreport == "true") {
+        if (finishtestreport == "true" || finishtestreport == "test") {
             testreport = true;
         } else {
             testreport = false;
@@ -379,11 +625,7 @@ int reportreceiveSSH(std::string data1) {
         logcritical("RECEIVED: " + data1, true);
         return -4;
     }
-
-
-
-
-    return -1;
+    return 0;
 }
 
 
@@ -392,114 +634,3 @@ int reportreceiveSSH(std::string data1) {
 
 
 
-///////////////////////////////////
-///// CREATE REPORT FROM MAPS /////
-///////////////////////////////////
-std::string createreport() {
-    if (fincomplete != true) {
-        return "ERROR";
-        return "ERROR";
-    }
-
-    std::string currentDate = refreshDate();
-    std::string currentTime = refreshTime();
-
-    // COMPILE THE REPORT LINE BY LINE
-    std::string stringcreate = "// REPORT";
-    stringcreate = stringcreate + "\n\n";
-    stringcreate = stringcreate + "// MISC.";
-    stringcreate = stringcreate + "tokenID = " + doublequote;
-    stringcreate = stringcreate + tokenID + doublequote + "\n";
-    stringcreate = stringcreate + "reportV = 1";
-    stringcreate = stringcreate + "testflight = " + inttostring(beta) + "\n";
-    stringcreate = stringcreate + "testreport = " + inttostring(testreport) + "\n";
-    stringcreate = stringcreate + "versionreporting = " + honeyversion + "\n";
-    stringcreate = stringcreate + "guestreporting = " + sshguestversion + "\n";
-    stringcreate = stringcreate + "date = " + doublequote + currentDate + doublequote + "\n";
-    stringcreate = stringcreate + "time = " + doublequote + currentTime + doublequote + "\n";
-    stringcreate = stringcreate + "method = SSH" + "\n";
-    stringcreate = stringcreate + "partofDDOS = " + inttostring(multipleips) + "\n";
-    stringcreate = stringcreate + "complete = " + inttostring(fincomplete) + "\n";
-    stringcreate = stringcreate + "option1 = " + inttostring(extraopt1) + "\n";
-    stringcreate = stringcreate + "option2 = " + inttostring(extraopt2) + "\n";
-    stringcreate = stringcreate + "option3 = " + inttostring(extraopt3) + "\n";
-    stringcreate = stringcreate + "option4 = " + inttostring(extraopt4) + "\n";
-    stringcreate = stringcreate + "option5 = " + inttostring(extraopt5) + "\n";
-    stringcreate = stringcreate + "option6 = " + inttostring(extraopt6) + "\n";
-    stringcreate = stringcreate + "option7 = " + inttostring(extraopt7) + "\n";
-    stringcreate = stringcreate + "option8 = " + inttostring(extraopt8) + "\n";
-    stringcreate = stringcreate + "option9 = " + inttostring(extraopt9) + "\n";
-    stringcreate = stringcreate + "option10 = " + inttostring(extraopt10) + "\n";
-    stringcreate = stringcreate + "option11 = " + inttostring(extraopt11) + "\n";
-    stringcreate = stringcreate + "\n\n";
-    stringcreate = stringcreate + "//////////////////////////" + "\n";
-    stringcreate = stringcreate + "// ATTEMPT COMBINATIONS //" + "\n";
-    stringcreate = stringcreate + "usercombo = {" + "\n";
-    if (usppairmapnum != 0 && pwdpairmapnum != 0) {
-        int ordertwo = 0;
-        while (ordertwo < usppairmapnum || ordertwo < pwdpairmapnum) {
-            stringcreate = stringcreate + "(" + usppairmap[ordertwo] + ";[$]: " + pwdpairmap[ordertwo] + ")" + "\n";
-            ordertwo = ordertwo + 1;
-        }
-    }
-    stringcreate = stringcreate + "(";
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "//////////////////////" + "\n";
-    stringcreate = stringcreate + "// TERMINAL PROCESS //" + "\n";
-    stringcreate = stringcreate + "commandprocess = {";
-    if (commandrunmapnum != 0) {
-        int commandoption = 0;
-        while (commandoption < commandrunmapnum) {
-            stringcreate = stringcreate + doublequote + commandrunmap[commandoption] + doublequote + "\n";
-            commandoption = commandoption + 1;
-        }
-    }
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "////////////////////" + "\n"; 
-    stringcreate = stringcreate + "// FILES AFFECTED //" + "\n";
-    stringcreate = stringcreate + "files = {" + "\n";
-    if (fileviewmapnum != 0) {
-        int filevieworder = 0;
-        while (filevieworder < fileviewmapnum) {
-            stringcreate = stringcreate + doublequote + fileviewmap[filevieworder] + doublequote + "\n";
-            filevieworder = filevieworder + 1;   
-        }
-    }
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "//////////////////////////" + "\n";
-    stringcreate = stringcreate + "// FILECHANGES AFFECTED //" + "\n";
-    stringcreate = stringcreate + "filechanges = {" + "\n";
-    if (fileeditmapnum != 0) {
-        int fileeditorder = 0;
-        while (fileeditorder < fileeditmapnum) {
-            stringcreate = stringcreate + doublequote + fileeditmap[fileeditorder] + doublequote + "\n";
-            fileeditorder = fileeditorder + 1;
-        }
-    }
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "////////////////////" + "\n";
-    stringcreate = stringcreate + "// ALL IPS PINGED //" + "\n";
-    stringcreate = stringcreate + "ipaddr = {" + "\n";
-    if (ipaddrmapnum != 0) {
-        int ipaddroption = 0;
-        while (ipaddroption < ipaddrmapnum) {
-            stringcreate = stringcreate + doublequote + ipaddrmap[ipaddroption] + doublequote + "\n";
-            ipaddroption = ipaddroption + 1;
-        }
-    }
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "/////////////" + "\n";
-    stringcreate = stringcreate + "// option1 //" + "\n";
-    stringcreate = stringcreate + "extraopt = {" + "\n";
-    if (extraoptmapnum != 0) {
-        int runningoption = 0;
-        while (runningoption < extraoptmapnum) {
-            stringcreate = stringcreate + doublequote + extraoptmap[runningoption] + doublequote + "\n";
-            runningoption = runningoption + 1;
-        }
-    }
-    stringcreate = stringcreate + "}" + "\n\n";
-    stringcreate = stringcreate + "END";
-
-    return stringcreate;
-}
