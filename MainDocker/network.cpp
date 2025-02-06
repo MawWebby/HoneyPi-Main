@@ -510,25 +510,16 @@ int reportreceiveSSH(std::string data1) {
             std::cout << compiledreport << std::endl;
             loginfo("Finished Compiling Report", true);
             loginfo("Sending Report to Server", true);
+            std::cout << encryptstring << std::endl;
             int returnvalue = sendpacketreports(resultantvec);
             if (returnvalue == 0) {
                 loginfo("Completed Sending Report to Server!", true);
                 loginfo("Removing and Recreating SSH Container", true);
-                system(dockerkillguestssh);
+                system(dockerkillguestssh.c_str());
                 // system start ssh container
 
+                clearmaps(true);
             }
-            
-            
-            
-            // SEND REPORT TO SERVER
-
-
-
-
-
-
-
         } else {
             fincomplete = false;
         }
@@ -637,7 +628,7 @@ int reportreceiveSSH(std::string data1) {
         } else if (watchdogkillcontainer == "test") {
             // CONTINUE (EDGE CASE)
         } else {
-            int killguest = system(dockerkillguestssh);
+            int killguest = system(dockerkillguestssh.c_str());
         }
     } else if (header1 == "WAT") {
         // MAYDAY WATCHDOG KILL!!!
@@ -654,7 +645,7 @@ int reportreceiveSSH(std::string data1) {
             std::cout << "REMOVING ALL CONTAINERS AND CLOSING ALL PORTS!!!" << std::endl;
             std::cout << "THIS IS CRITICAL!!!" << std::endl;
 
-            int killguest = system(dockerkillguestssh);
+            int killguest = system(dockerkillguestssh.c_str());
             if (killguest != 0) {
                 int killswitch = system("docker kill *");
                 if (killswitch != 0) {

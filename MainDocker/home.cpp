@@ -196,13 +196,13 @@ std::map<int, bool> serverportsactive = {
 ////////////////////////////////
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
-char* dockerstatuscommand = "docker ps > nul:";
-char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-//const char* dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-//const char* dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-char* dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
-char* dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
+std::string dockerstatuscommand = "docker ps > nul:";
+std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+//std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+//std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
+std::string dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
+std::string dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 
 
 
@@ -552,7 +552,7 @@ int setup() {
     // CHECK DOCKER STATUS
     loginfo("Checking for Docker Control...", false);
     sleep(1);
-    int output = system(dockerstatuscommand);
+    int output = system(dockerstatuscommand.c_str());
     if (output == 0) {
         sendtolog("Done");
     } else {
@@ -659,9 +659,9 @@ int setup() {
         int status;
 
         if (debug == true) {
-            status = system(dockerstartguestsshNOREMOVE);
+            status = system(dockerstartguestsshNOREMOVE.c_str());
         } else {
-            status = system(dockerstartguestssh);
+            status = system(dockerstartguestssh.c_str());
         }
 
         if (status == 0) {
@@ -669,11 +669,11 @@ int setup() {
             timesincelastcheckinSSH.store(time(NULL) + 10);
             sendtolog("Done");
         } else {
-            status = system(dockerkillguestssh);
+            status = system(dockerkillguestssh.c_str());
             sleep(3);
-            status = system(dockerremoveguestssh);
+            status = system(dockerremoveguestssh.c_str());
             sleep(1);
-            status = system(dockerstartguestssh);
+            status = system(dockerstartguestssh.c_str());
 
             if (status == 0) {
                 sshActive.store(1);
@@ -817,9 +817,9 @@ int main() {
                     logcritical("45 seconds since last SSH Heartbeat received, assuming dead", true);
                     close(server_fd);
                     sshActive.store(0);
-                    system(dockerkillguestssh);
+                    system(dockerkillguestssh.c_str());
                     sleep(3);
-                    system(dockerremoveguestssh);
+                    system(dockerremoveguestssh.c_str());
                     timer0.store(time(NULL));
                 }
             } else {
@@ -831,9 +831,9 @@ int main() {
                     logcritical("300 seconds since first expected SSH Heartbeat received, assuming dead", true);
                     close(server_fd);
                     sshActive.store(0);
-                    system(dockerkillguestssh);
+                    system(dockerkillguestssh.c_str());
                     sleep(3);
-                    system(dockerremoveguestssh);
+                    system(dockerremoveguestssh.c_str());
                     timer0.store(time(NULL));
                 }
             }
@@ -852,11 +852,11 @@ int main() {
                         restartatttemptsSSH.store(retryattempts);
 
                         logwarning("Attempting to restart SSH VM", true);
-                        system(dockerkillguestssh);
+                        system(dockerkillguestssh.c_str());
                         sleep(3);
-                        system(dockerremoveguestssh);
+                        system(dockerremoveguestssh.c_str());
                         sleep(3);
-                        system(dockerstartguestssh);
+                        system(dockerstartguestssh.c_str());
                         sshActive.store(1);
                         timesincelastcheckinSSH.store(time(NULL) + 10);
                         int port63599 = createnetworkport63599();
