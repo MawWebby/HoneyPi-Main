@@ -66,15 +66,41 @@ int packetsize = 1000;
 
 
 
-//////////////////////////////////////
-//// CHECK UPSTREAM SERVER STATUS ////
-//////////////////////////////////////
-int checkserverstatus() {
+
+
+////////////////////////////////////////////////////
+//// SEND PACKETS TO SERVER AND RECORD RESPONSE ////
+////////////////////////////////////////////////////
+// 0 - NEW CONNECTION
+// 1 - TOKENID
+// 2 - SEND REPORT TO SERVER
+std::string sendtoserver(int packettype, std::string data2) {
+    if (packettype == 0) {
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
+    } else if (packettype == 1) {
+
+    } else if (packettype == 2) {
+
+    } else if (packettype == 3) {
+
+    } else if (packettype == 4) {
+
+    } else if (packettype == 5) {
+
+    } else {
+
+    }
+
+    // DATA2 CHECK FOR NULL
+    if (data2 == "") {
+        return "ERROR";
+        return "ERROR";
+    }
 
     // CREATE NETWORK SOCKET AT ADDRESS
     const char* server_ip = "honeypi.baselinux.net";
     const int server_port = 11829;
-    const std::string message = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
+    
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -83,6 +109,7 @@ int checkserverstatus() {
     // CHECK FOR RESOLVED HOSTNAME
     if (getaddrinfo(server_ip, nullptr, &hints, &res) != 0) {
         logcritical("Unable to resolve hostname!", true);
+        return "ERROR";
     }
 
     // CONFIGURE PORT
@@ -98,23 +125,35 @@ int checkserverstatus() {
 
     if (serverUpstream < 0) {
         std::cerr << "Socket creation failed.\n";
-        return 1;
+        return "ERROR";
     }
 
     if (connect(serverUpstream, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         std::cerr << "Connection to server failed.\n";
         close(serverUpstream);
-        return 1;
+        return "ERROR";
     }
 
     // PROCESS READ
     //std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
-    send(serverUpstream, message.c_str(), message.length(), 0);
+    send(serverUpstream, data2.c_str(), data2.length(), 0);
     char bufferread[4096];
     read(serverUpstream, bufferread, 4096);
     std::string yup = bufferread;
     close(serverUpstream);
+    return yup;
+}
 
+
+
+
+
+//////////////////////////////////////
+//// CHECK UPSTREAM SERVER STATUS ////
+//////////////////////////////////////
+int checkserverstatus() {
+    std::string yup = sendtoserver(0, "");
+    
     // CASE STATEMENTS
     if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
         loginfo("SERVER - Received Valid Connection...", true);
@@ -340,17 +379,38 @@ int splitreportintopack(std::string data1) {
         while (data1.length() > (multiplier + 1) * packetsize) {
             alldataofreport[multiplier] = data1.substr((multiplier * packetsize), packetsize);
             multiplier = multiplier + 1;
+            totalnumberofpackets = totalnumberofpackets + 1;
         }
         alldataofreport[multiplier] = data1.substr((multiplier * packetsize), (data1.length() - (multiplier * packetsize)));
+        totalnumberofpackets = totalnumberofpackets + 1;
         return 0;
     } else {
         return -2;
         return -2;
     }
-    return 0;
+    return totalnumberofpackets;
 }
 
 
+
+
+///////////////////////////////////
+///// CREATE REPORT FROM MAPS /////
+///////////////////////////////////
+int sendpacketreports(int splittingreport) {
+    if (splittingreport != 0) {
+        int currentsend = 0;
+        while (currentsend <= splittingreport) {
+            std::string partstr = alldataofreport[currentsend];
+
+            currentsend = currentsend + 1;
+        }
+    } else {
+        return -1;
+        return -1;
+    }
+    return -2;
+}
 
 
 
@@ -441,14 +501,23 @@ int reportreceiveSSH(std::string data1) {
     } else if (header1 == "FIN") {
         std::string completionstatus = data1.substr(5, data1.length() - 5);
         if (completionstatus == "true") {
+            loginfo("Creating Report...", true);
             fincomplete = true;
             std::string compiledreport = createreport();
             std::cout << "REPORT" << std::endl;
             std::string encryptstring = ucrypt_Ecrypt(compiledreport);
             int resultantvec = splitreportintopack(encryptstring);
             std::cout << compiledreport << std::endl;
-            
-            
+            loginfo("Finished Compiling Report", true);
+            loginfo("Sending Report to Server", true);
+            int returnvalue = sendpacketreports(resultantvec);
+            if (returnvalue == 0) {
+                loginfo("Completed Sending Report to Server!", true);
+                loginfo("Removing and Recreating SSH Container", true);
+                system(dockerkillguestssh);
+                // system start ssh container
+
+            }
             
             
             
