@@ -6,6 +6,7 @@ SYSTEM:
 
 MODES:
  - sshd = true
+ - portscan = true
  - betaversions = false
 
 API_KEY:
@@ -19,64 +20,86 @@ PING:
  - pingaddressexclusion = "none"
  - pingfrequency = 300
 
+SSH_MODULATOR
+ - sshmodulation = true
+ - sshMakeIP = true
+ - portBlocking = true
+ - betweenMod = true
+ - toAddress: 192.168.1.1
+
 PORT_BLOCKING:
  - status = f
  - 9000
     - enabled = false
-    - sendtraffic = 9000
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9090
     - blocklist = true
-    - standard = UDP
+    - standard = TCP / UDP
  - 9001
     - enabled = false
-    - sendtraffic = 9001
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9091
     - blocklist = true
     - standard = UDP
  - 9002
     - enabled = false
-    - sendtraffic = 9002
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9092
     - blocklist = true
     - standard = UDP
  - 9003
     - enabled = false
-    - sendtraffic = 9003
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9093
     - blocklist = true
     - standard = UDP
  - 9004
     - enabled = false
-    - sendtraffic = 9004
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9094
     - blocklist = true
     - standard = UDP
  - 9005
     - enabled = false
-    - sendtraffic = 9005
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9095
     - blocklist = true
     - standard = TCP
  - 9006
     - enabled = false
-    - sendtraffic = 9006
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9096
     - blocklist = true
     - standard = TCP
  - 9007
     - enabled = false
-    - sendtraffic = 9007
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9097
     - blocklist = true
     - standard = TCP
  - 9008
     - enabled = false
-    - sendtraffic = 9008
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9098
     - blocklist = true
     - standard = TCP
  - 9009
     - enabled = false
-    - sendtraffic = 9009
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9099
     - blocklist = true
     - standard = TCP
  - 9010
     - enabled = false
-    - sendtraffic = 9010
+    - sendIP = 192.168.1.1
+    - sendtraffic = 9100
     - blocklist = true
     - standard = SSH
- 
+
+DOWNSTREAM_PI:
+ - downStreamRouter: false
+ - downStreamHoneyPi: true
+
 DEBUGGING:
  - avoid_first_watchdog = false
  - 
