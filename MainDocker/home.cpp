@@ -212,7 +212,7 @@ std::string dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
 ///////////////////////////////
 void handleSignal(int signal) {
     if (signal == SIGTERM || signal == SIGINT) {
-        std::cout << "Received termination signal, shutting down gracefully..." << std::endl;
+        std::cout << "[INFO] - Received shutdown signal..." << std::endl;
         stopSIGNAL.store(1);     
     }
 }

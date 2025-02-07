@@ -290,7 +290,7 @@ void interactiveTerminal() {
     sleep(10);
     system("clear");
     std::cout << "HoneyPi Terminal" << std::endl;
-    std::cout << "HoneyPi Server Version: " << honeyversion << std::endl;
+    std::cout << "HoneyPi Docker Version: " << honeyversion << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;

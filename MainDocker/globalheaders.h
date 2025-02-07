@@ -51,4 +51,8 @@ extern std::string updatesforHONEYPI;
 extern std::string honeyversion;
 
 // COMMANDS FOR DOCKER
-extern char* dockerkillguestssh;
+extern std::string dockerstatuscommand;
+extern std::string dockerkillguestssh;
+extern std::string dockerstartguestssh;
+extern std::string dockerstartguestsshNOREMOVE;
+extern std::string dockerremoveguestssh;
