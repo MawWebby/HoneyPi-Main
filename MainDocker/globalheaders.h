@@ -41,8 +41,13 @@ extern std::atomic<long long int> timesincelastcheckinSSH;
 extern std::atomic<int> restartatttemptsSSH;
 extern std::atomic<long long int> timesincestartup;
 extern bool bypassterminal;
-extern std::string tokenID;
 extern bool beta;
+
+// AUTHENTICATION METHODS
+extern std::string tokenID;
+extern std::string apiKEY;
+extern std::string loginstr;
+extern std::string passstr;
 
 // UPDATE VARIABLES
 extern std::string updatesforHONEYPI;
