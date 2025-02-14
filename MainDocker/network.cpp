@@ -55,7 +55,7 @@ std::string tempforpassmap = "";
 
 
 // SYMBOLS
-char doublequote = '"';
+std::string doublequote = "\"";
 
 
 // MAP FOR PACKETS TO SEND WITH DATA
@@ -71,21 +71,76 @@ int packetsize = 1000;
 ////////////////////////////////////////////////////
 //// SEND PACKETS TO SERVER AND RECORD RESPONSE ////
 ////////////////////////////////////////////////////
-// 0 - NEW CONNECTION
-// 1 - TOKENID
-// 2 - SEND REPORT TO SERVER
-std::string sendtoserver(int packettype, std::string data2) {
+// 0  - NEW CONNECTION
+// 1  - LOGIN WITH TOKENID
+// 2  - LOGIN WITH USER/PASS
+// 3  - CHECK FOR VERSION
+// 4  - UPDATE SCRIPT FOR NEW VERSION
+// 5  - INITIALIZE SIGNAL WITH NEW REPORT
+// 6  - Report Portion of Full
+// 7  - Last Packet of Report
+// 8  - Report to Main Server (30 mins)
+// 9  - 
+// 10 - 
+// 11 - 
+// 12 - 
+// 13 - 
+// 14 - 
+// 15 - 
+// 16 - 
+// 17 - 
+// 18 - 
+// 19 - 
+std::string sendtoserver(int packettype, int optionnumber, std::string optionstring, std::string data2) {
     if (packettype == 0) {
-        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}";
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "NEW" + doublequote + "}";
+        //data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}';
     } else if (packettype == 1) {
-
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "ESTABLISH" + doublequote + "; " + doublequote + "LOGIN" + doublequote + ", " + doublequote + "API=" + apiKEY + doublequote + "}";
     } else if (packettype == 2) {
-
+        //data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "ESTABLISH" + doublquote + ";" + doublequote + "LOGIN" + doublquote + ", " + doublquote + "API=" + apiKEY
+        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"ESTABLISH\"; \" LOGIN\", \"LOGIN=';
+        data2 = data2 + loginstr; 
+        std::string ending23 = doublequote + ";;;;PASS=" + passstr + "}";
+        data2 = data2 + ending23;
     } else if (packettype == 3) {
-
+        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"CHECK_FOR_UPDATE\"; \"VERSION\", \"ID=';
+        data2 = data2 + honeyversion + doublequote + ";"+ doublequote + "DD=HPI" + doublequote + "}";
     } else if (packettype == 4) {
 
     } else if (packettype == 5) {
+        //data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW_REPORT\"; \"TOTALPACKETS\", \"' + inttostring(totalnumberofpackets) + doublequote + "}";
+    } else if (packettype == 6) {
+        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"REPORT_PART\"; \"REPORTNUM\", ';
+        data2 = data2 + inttostring(optionnumber) + ";" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+    } else if (packettype == 7) {
+        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"REPORT_PART\"; \"REPORTNUM\", ';
+        data2 = data2 + inttostring(optionnumber) + ";REPORTFINISH=TRUE;" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+    } else if (packettype == 8) {
+
+    } else if (packettype == 9) {
+
+    } else if (packettype == 10) {
+
+    } else if (packettype == 11) {
+
+    } else if (packettype == 12) {
+
+    } else if (packettype == 13) {
+
+    } else if (packettype == 14) {
+
+    } else if (packettype == 15) {
+
+    } else if (packettype == 16) {
+
+    } else if (packettype == 17) {
+
+    } else if (packettype == 18) {
+
+    } else if (packettype == 19) {
+
+    } else if (packettype == 20) {
 
     } else {
 
@@ -98,7 +153,9 @@ std::string sendtoserver(int packettype, std::string data2) {
     }
 
     // CREATE NETWORK SOCKET AT ADDRESS
-    const char* server_ip = "honeypi.baselinux.net";
+    // DEBUG
+    //const char* server_ip = "honeypi.baselinux.net";
+    const char* server_ip = "10.72.91.159";
     const int server_port = 11829;
     
     struct addrinfo hints, *res;
@@ -141,6 +198,11 @@ std::string sendtoserver(int packettype, std::string data2) {
     read(serverUpstream, bufferread, 4096);
     std::string yup = bufferread;
     close(serverUpstream);
+    std::cout << std::endl;
+    sleep(1);
+    std::cout << "data2: " << data2 << std::endl;
+    std::cout << yup << std::endl;
+    sleep(1);
     return yup;
 }
 
@@ -152,21 +214,21 @@ std::string sendtoserver(int packettype, std::string data2) {
 //// CHECK UPSTREAM SERVER STATUS ////
 //////////////////////////////////////
 int checkserverstatus() {
-    std::string yup = sendtoserver(0, "");
+    std::string yup = sendtoserver(0, 0, "", "");
     
     // CASE STATEMENTS
     if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 18\n\n{state: available}") {
-        loginfo("SERVER - Received Valid Connection...", true);
+//        loginfo("SERVER - Received Valid Connection...", true);
         return 0;
     } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
-        loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
+  //      loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
         return 3;
     } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: rejected}") {
-        loginfo("SERVER - Received REJECTION!", true);
+   //     loginfo("SERVER - Received REJECTION!", true);
         return 4;
     } else {
-        logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
-        std::cout << "RECEIVED:" << yup << std::endl;
+   //     logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
+   //     std::cout << "RECEIVED:" << yup << std::endl;
         return 1;
     }
     return 2;
