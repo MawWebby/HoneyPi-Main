@@ -6,7 +6,12 @@ bool debug = false;
 bool beta = true;
 bool testing = false;
 bool bypassterminal = false;
+
+// ID PARAMETERS
 std::string tokenID = "";
+std::string apiKEY = "CvuapyqkefZHKhjHLkusI6ZLKfHbYc40xILa1eBEUkOIxYGqHy8sLXX7GVJegk9e";
+std::string passstr = "";
+std::string loginstr = "";
 
 
 ////////////////////////
@@ -466,31 +471,49 @@ int setup() {
 
 
     // CHECK UPSTREAM SERVER STATUS
+    loginfo("Checking Upstream Server Connectivity...", false);
     int checknetworkconnectivitystart = checkserverstatus();
 
     // CASES
     if (checknetworkconnectivitystart == 0) {
         // VALID RESPONSE
         // CONTINUE
+        sendtolog("OK");
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
+        sendtolog("ERROR (1)");
         startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
+        sendtolog("ERROR (2)");
         startupchecks = startupchecks + 2;
     } else if (checknetworkconnectivitystart == 3) {
         // TEMPORARILY UNAVAILABLE
         // CONTINUE
+        sendtolog("Wait (3)");
     } else if (checknetworkconnectivitystart == 4) {
         // RECEIVED REJECTION
         //FIX THIS ON SERVER SIDE
         //startupchecks = startupchecks + 1;
+        sendtolog("REJECTED");
     } else {
         // UNCAUGHT EXCEPTION
         startupchecks = startupchecks + 5;
     }
-  
 
+
+
+
+    // UPDATE API TOKEN
+    loginfo("Updating ID from Server...", false);
+    std::string newID = sendtoserver(1, 0, "", "");
+    if (newID != "") {
+        newID = tokenID;
+        sendtolog("Done");
+    } else {
+        sendtolog("ERROR");
+        startupchecks = startupchecks + 1;
+    }
 
 
 
@@ -637,14 +660,12 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD (2/3) (11535)
-    loginfo("Creating server thread on port 11535 listen...", false);
 
     sleep(2);
     std::thread acceptingClientsThread2(handle11535Connections, server_fd2);
     acceptingClientsThread2.detach();
     sleep(1);
-
-    sendtolog("Done");
+    loginfo("Creating server thread on port 11535 listen...Done", true);
 
 
 
@@ -691,7 +712,7 @@ int setup() {
         logcritical("STARTUP CHECKS DID NOT RETURN 0!", true);
         logcritical("", true);
         logcritical("NOT STARTING GUEST DOCKERS!", true);
-        std::cout << "RETURNED VALUE OF: " << startupchecks << std::endl;
+        std::cout << "[ERROR] - RETURNED VALUE OF: " << startupchecks << std::endl;
     }
 
 
@@ -706,14 +727,12 @@ int setup() {
 
 
     // SERVER PORT LISTEN THREAD
-    loginfo("Creating server thread on port 63599 listen...", false);
 
     sleep(2);
     std::thread acceptingClientsThread(handleConnections63599, server63599);
     acceptingClientsThread.detach();
     sleep(1);
-
-    sendtolog("Done");
+    loginfo("Creating server thread on port 63599 listen...Done", false);
 
     // STARTUP CHECKS
     if (startupchecks != 0) {
