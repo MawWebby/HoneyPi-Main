@@ -6,6 +6,9 @@
 // HONEYPI SERVER STATUS
 int checkserverstatus();
 
+// UPDATE TOKEN FROM SERVER
+int updateToken();
+
 // CLEAR MAPS OF PACKETS
 int clearmaps(bool);
 

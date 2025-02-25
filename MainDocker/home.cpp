@@ -505,16 +505,7 @@ int setup() {
 
 
     // UPDATE API TOKEN
-    loginfo("Updating ID from Server...", false);
-    std::string newID = sendtoserver(1, 0, "", "");
-    if (newID != "") {
-        newID = tokenID;
-        sendtolog("Done");
-    } else {
-        sendtolog("ERROR");
-        startupchecks = startupchecks + 1;
-    }
-
+    startupchecks = startupchecks + updateToken();
 
 
 

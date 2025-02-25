@@ -192,16 +192,21 @@ std::string sendtoserver(int packettype, int optionnumber, std::string optionstr
     }
 
     // PROCESS READ
-    //std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
     send(serverUpstream, data2.c_str(), data2.length(), 0);
     char bufferread[4096];
     read(serverUpstream, bufferread, 4096);
     std::string yup = bufferread;
     close(serverUpstream);
-    std::cout << std::endl;
     sleep(1);
-    std::cout << "data2: " << data2 << std::endl;
-    std::cout << yup << std::endl;
+
+
+    // DEBUG (FIX THIS)
+    //std::cout << "Connected to the server at " << server_ip << ":" << server_port << "\n";
+    //std::cout << "data2: " << data2 << std::endl;
+    //std::cout << yup << std::endl;
+
+    
+
     sleep(1);
     return yup;
 }
@@ -234,6 +239,33 @@ int checkserverstatus() {
     return 2;
 }
 
+
+
+
+//////////////////////////////////
+//// UPDATE TOKEN FROM SERVER ////
+//////////////////////////////////
+int updateToken() {
+    int status = 0;
+    loginfo("Updating ID from Server...", false);
+    std::string newID = sendtoserver(1, 0, "", "");
+    //std::cout << "ERRORED" << newID.length() << newID << std::endl;
+    if (newID != "" && newID.length() >= 148) {
+        //std::cout << newID.substr(59,7) << "{}" << newID.substr(67,7) << "{}" << newID.substr(76,5) << "{}" << newID.substr(81,2) << "{}" << newID.substr(147,1) << std::endl;
+        if (newID.substr(59,7) == "{state:" && newID.substr(67,7) == "success" && newID.substr(76,5) == "TOKEN" && newID.substr(81,2) == ": " && newID.substr(147,1) == "}") {
+            tokenID = newID.substr(83,64);
+            std::cout << "IT WORKED!: " << tokenID << std::endl;
+            sendtolog("Done");
+        } else {
+            sendtolog("ERROR (INVALID RESPONSE)");
+            status = status + 1;
+        }
+    } else {
+        sendtolog("ERROR (NULL RESPONSE)");
+        status = status + 1;
+    }
+    return status;
+}
 
 
 
