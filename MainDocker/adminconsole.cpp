@@ -61,6 +61,8 @@ void level1access() {
     std::cout << "system      | (NO ARGS) | Enter Bash of the Docker Container" << std::endl;
     std::cout << "generate    | (NO ARGS) | Generate Example of Token Sent to Server" << std::endl;
     std::cout << "pinghoney   | (NO ARGS) | Ping the Honey Server to Verify Connectivity" << std::endl;
+    std::cout << "refreshtoken| (NO ARGS) | Refresh the Token from the server" << std::endl;
+    std::cout << "whatismytoken|(NO ARGS) | What is the current token issued from the server" << std::endl;
 }
 
 void level0access() {
@@ -147,6 +149,34 @@ void processCommand(const std::string& command) {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
         foundcommand = true;
+    }
+
+    // REFRESH TOKEN FROM SERVER
+    if (command == "refreshtoken") {
+        if (useraccesslevel >= 1) {
+            std::cout << "Old Token: " << tokenID << std::endl;
+            std::cout << "Updating ID from Server..." << std::endl;
+            int updatetoken = updateToken();
+            if (updatetoken == 0) {
+                std::cout << "OK" << std::endl;
+                std::cout << "New Token: " << tokenID << std::endl;
+            } else {
+                std::cout << "AN ERROR OCCURRED WHILE UPDATING! (" << updatetoken << ")" << std::endl;
+            }
+            loginfo("Updating ID from Server...", false);
+            
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+    }
+
+    // WHAT IS CURRENT TOKEN
+    if (command == "whatismytoken") {
+        if (useraccesslevel >= 1) {
+            std::cout << "Current Token is " << tokenID << std::endl;
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
     }
 
     // PING HONEY SERVER
