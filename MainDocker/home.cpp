@@ -1,7 +1,7 @@
 #include "globalheaders.h"
 
 
-std::string honeyversion = "0.2.0";
+std::string honeyversion = "0.5.0";
 bool debug = false;
 bool beta = true;
 bool testing = false;
@@ -202,12 +202,10 @@ std::map<int, bool> serverportsactive = {
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
 std::string dockerstatuscommand = "docker ps > nul:";
-std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-//std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-//std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 22:22 --network=localportnetwork honeypotpi:guestsshv1 > nul:";
-std::string dockerkillguestssh = "docker container kill SSHVMV1 > nul:";
-std::string dockerremoveguestssh = "docker container rm SSHVMV1 > nul:";
+std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 &> /dev/null";
+std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 &> /dev/null";
+std::string dockerkillguestssh = "docker container kill SSHVMV1 &> /dev/null";
+std::string dockerremoveguestssh = "docker container rm SSHVMV1 &> /dev/null";
 
 
 
@@ -413,7 +411,7 @@ int setup() {
     startupchecks = startupchecks + system("touch /home/honeypi/log/log.txt");
 
 
-    sendtolog("Hello, World from 2515!");
+    sendtolog("Hello, World from 2514!");
     sendtolog("  _____     _____     ____________      _____      ____  ________________   ____         ____           ______________     ________________  ");
     sendtolog("  |   |     |   |    /            `     |   `      |  |  |               |  `  `        /   /           |             `   |               |  ");
     sendtolog("  |   |     |   |   /              `    |    `     |  |  |  |¯¯¯¯¯¯¯¯¯¯¯¯    `  `      /   /            |   |¯¯¯¯¯¯`   |  |_____    ______|  ");
