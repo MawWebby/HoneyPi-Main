@@ -19,6 +19,8 @@ int currentyear;
 std::string previouscommand;
 
 
+bool sendtestreportbeta = false;
+
 
 /////////////////////////////////
 //// WAIT FOR TERMINAL INPUT ////
@@ -86,6 +88,7 @@ void sendtoterminal(std::string data) {
 
 void processCommand(const std::string& command) {
     bool foundcommand = false;
+    bool yescommandrequest = false;
 
     // SHOW GENERAL HELP IN COMMANDS
     if (command == "commands") {
@@ -177,6 +180,7 @@ void processCommand(const std::string& command) {
         } else {
             std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
         }
+        foundcommand = true;
     }
 
     // PING HONEY SERVER
@@ -201,6 +205,34 @@ void processCommand(const std::string& command) {
     // UPDATE COMMAND
     if (command == "update") {
         // FUTURE UPDATE COMMAND
+    }
+
+    // SEND TEST REPORT TO SERVER
+    if (command == "sendtestreport") {
+        if (useraccesslevel >= 1) {
+            std::cout << "Request Received to Send Test Report to Server!" << std::endl;
+            std::cout << "While this functionality is supported, spamming of this command is in violation" << std::endl;
+            std::cout << "of ToS. In order to prevent spamming, please type 'YES' again to validate the request." << std::endl;
+            foundcommand = true;
+            sendtestreportbeta = true;
+            yescommandrequest = true;
+        }
+    }
+
+    // **YES** COMMAND
+    if (command == "YES") {
+        if (sendtestreportbeta == true) {
+            // SEND TEST REPORT TO SERVER
+            std::cout << "Sending Test Report to Server!" << std::endl;
+
+            sleep(3);
+
+            
+        } else if (false) {
+            
+        } else {
+
+        }
     }
 
     // SHUTDOWN COMMAND
@@ -310,6 +342,11 @@ void processCommand(const std::string& command) {
     if (foundcommand == false) {
         std::cout << "Unknown command: " << command << "\n";
         std::cout << "Try 'commands' instead" << std::endl;
+    }
+
+    // IF ANOTHER COMMAND IS RAN/NULLIFY YES PROMPT
+    if (yescommandrequest == false) {
+        sendtestreportbeta = false;
     }
 }
 
