@@ -62,9 +62,16 @@ std::string doublequote = "\"";
 int totalnumberofpackets = 0;
 std::map<int, std::string> alldataofreport;
 int packetsize = 1000;
+const std::string startreporting = "{" + doublequote + "STATE" + doublequote + ":" + doublequote + "START_REPORT" + doublequote + "}";
+const std::string acceptedserver = "{" + doublequote + "STATE" + doublequote + "," + doublequote + "SUCCESS" + doublequote + "}";
 
 
 
+
+// CREATE NETWORK SOCKET AT ADDRESS
+//const char* server_ip = "honeypi.baselinux.net";
+const char* server_ip = "10.72.91.159";
+const int server_port = 11829;
 
 
 
@@ -94,28 +101,20 @@ int packetsize = 1000;
 std::string sendtoserver(int packettype, int optionnumber, std::string optionstring, std::string data2) {
     if (packettype == 0) {
         data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "NEW" + doublequote + "}";
-        //data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW\"}';
     } else if (packettype == 1) {
         data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "ESTABLISH" + doublequote + "; " + doublequote + "LOGIN" + doublequote + ", " + doublequote + "API=" + apiKEY + doublequote + "}";
     } else if (packettype == 2) {
-        //data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "ESTABLISH" + doublquote + ";" + doublequote + "LOGIN" + doublquote + ", " + doublquote + "API=" + apiKEY
-        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"ESTABLISH\"; \" LOGIN\", \"LOGIN=';
-        data2 = data2 + loginstr; 
-        std::string ending23 = doublequote + ";;;;PASS=" + passstr + "}";
-        data2 = data2 + ending23;
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "ESTABLISH" + doublequote + "; " + doublequote + "LOGIN" + doublequote + ", " + doublequote + "LOGIN=" + loginstr + doublequote + "; " + doublequote + ";;;;PASS=" + passstr + doublequote + "}";
     } else if (packettype == 3) {
-        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"CHECK_FOR_UPDATE\"; \"VERSION\", \"ID=';
-        data2 = data2 + honeyversion + doublequote + ";"+ doublequote + "DD=HPI" + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "CHECK_FOR_UPDATE" + doublequote + "; " + doublequote + "VERSION" + doublequote + ", " + doublequote + "ID=" + honeyversion + doublequote + "}";
     } else if (packettype == 4) {
 
     } else if (packettype == 5) {
-        //data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"NEW_REPORT\"; \"TOTALPACKETS\", \"' + inttostring(totalnumberofpackets) + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "NEW_REPORT" + doublequote + "; " + doublequote + "TOTALPACKETS" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "}"; 
     } else if (packettype == 6) {
-        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"REPORT_PART\"; \"REPORTNUM\", ';
-        data2 = data2 + inttostring(optionnumber) + ";" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:test/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
     } else if (packettype == 7) {
-        data2 = 'HAPI/1.1\nContent-Type:text/json\n\n{\"CONNECTION\", \"REPORT_PART\"; \"REPORTNUM\", ';
-        data2 = data2 + inttostring(optionnumber) + ";REPORTFINISH=TRUE;" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "REPORTFINISH=TRUE" + doublequote + ";" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
     } else if (packettype == 8) {
 
     } else if (packettype == 9) {
@@ -148,15 +147,10 @@ std::string sendtoserver(int packettype, int optionnumber, std::string optionstr
 
     // DATA2 CHECK FOR NULL
     if (data2 == "") {
-        return "ERROR";
-        return "ERROR";
+        return "ERROR1";
+        return "ERROR1";
     }
 
-    // CREATE NETWORK SOCKET AT ADDRESS
-    // DEBUG
-    //const char* server_ip = "honeypi.baselinux.net";
-    const char* server_ip = "10.72.91.159";
-    const int server_port = 11829;
     
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof(hints));
@@ -166,7 +160,7 @@ std::string sendtoserver(int packettype, int optionnumber, std::string optionstr
     // CHECK FOR RESOLVED HOSTNAME
     if (getaddrinfo(server_ip, nullptr, &hints, &res) != 0) {
         logcritical("Unable to resolve hostname!", true);
-        return "ERROR";
+        return "ERROR2";
     }
 
     // CONFIGURE PORT
@@ -182,13 +176,13 @@ std::string sendtoserver(int packettype, int optionnumber, std::string optionstr
 
     if (serverUpstream < 0) {
         std::cerr << "Socket creation failed.\n";
-        return "ERROR";
+        return "ERROR3";
     }
 
     if (connect(serverUpstream, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         std::cerr << "Connection to server failed.\n";
         close(serverUpstream);
-        return "ERROR";
+        return "ERROR4";
     }
 
     // PROCESS READ
@@ -233,7 +227,7 @@ int checkserverstatus() {
         return 4;
     } else {
    //     logcritical("SERVER - RECEIVED NOT RESPONSE FROM SERVER!", true);
-   //     std::cout << "RECEIVED:" << yup << std::endl;
+        std::cout << "RECEIVED (INVALID) = " << yup << std::endl;
         return 1;
     }
     return 2;
@@ -455,34 +449,38 @@ std::string createreport() {
 ////////////////////////////////////////////////////////
 //// SPLIT REPORT INTO MULTIPLE PACKETS FOR SENDING ////
 ////////////////////////////////////////////////////////
-int splitreportintopack(std::string data1) {
+// RESTRUCTURE INTO MAP
+std::map<int, std::string> splitreportintopack(std::string data1) {
+    std::map <int, std::string> packets;
+    packets.clear();
     if (data1 == "") {
         // NULL STRING RECEIVED/IGNORE
-        return -1;
-        return -1;
+        logcritical("Split Function Received Null Data", true);
+        return packets;
+        return packets;
     }
 
-    alldataofreport.clear();
     totalnumberofpackets = 0;
-
     if (data1.length() <= packetsize) {
-        alldataofreport[totalnumberofpackets] = data1;
+        packets[totalnumberofpackets] = data1;
         totalnumberofpackets = totalnumberofpackets + 1;
     } else if (data1.length() > packetsize) {
         int multiplier = 0;
         while (data1.length() > (multiplier + 1) * packetsize) {
-            alldataofreport[multiplier] = data1.substr((multiplier * packetsize), packetsize);
+            packets[multiplier] = data1.substr((multiplier * packetsize), packetsize);
             multiplier = multiplier + 1;
             totalnumberofpackets = totalnumberofpackets + 1;
         }
-        alldataofreport[multiplier] = data1.substr((multiplier * packetsize), (data1.length() - (multiplier * packetsize)));
+        packets[multiplier] = data1.substr((multiplier * packetsize), (data1.length() - (multiplier * packetsize)));
         totalnumberofpackets = totalnumberofpackets + 1;
-        return 0;
+        return packets;
     } else {
-        return -2;
-        return -2;
+        logcritical("Split Function Received < 0 Packet Length!!!", true);
+        return packets;
+        return packets;
     }
-    return totalnumberofpackets;
+    logcritical("Split Function Jumped If Case!", true);
+    return packets;
 }
 
 
@@ -491,18 +489,59 @@ int splitreportintopack(std::string data1) {
 ///////////////////////////////////
 ///// CREATE REPORT FROM MAPS /////
 ///////////////////////////////////
-int sendpacketreports(int splittingreport) {
-    if (splittingreport != 0) {
+int sendpacketreports(std::map<int, std::string> packetssend) {
+    int splittingreport = packetssend.size();
+    std::cout << "PACKET SIZE:" << splittingreport << std::endl;
+    if (splittingreport > 1) {
         int currentsend = 0;
-        while (currentsend <= splittingreport) {
-            std::string partstr = alldataofreport[currentsend];
+        while (currentsend <= splittingreport - 1) {
+            std::string partstr = packetssend[currentsend];
+
+            std::cout << "PACKET" << currentsend << packetssend[currentsend] << std::endl;
+
+
+
+            // SEND TO SERVER GOES HERE
 
             currentsend = currentsend + 1;
         }
+
+        return currentsend;
+    } else if (splittingreport == 1) {
+        std::string readyresult = "";
+        while (readyresult != startreporting) {
+            readyresult = sendtoserver(5,1,"","");
+            if (readyresult != startreporting) {
+                std::cout << "WAITING FOR SERVER RESPONSE! (Trying Again 30 Seconds)" << std::endl;
+                std::cout << "RECEIVED: " << readyresult << std::endl;
+                sleep(30);
+            } else {
+                std::cout << "RECEIVED APPROVAL FROM SERVER, Starting to Send Report!" << std::endl;
+                sleep(5);
+            }
+        }
+
+        if (readyresult == startreporting) {
+            // SEND TO SERVER GOES HERE
+            std::string packettyper = sendtoserver(7, 1, packetssend[0], "");
+            if (packettyper == acceptedserver) {
+                loginfo("Report Sent to Server Successfully!", true);
+                return 1;
+            } else {
+                logcritical("ERROR OCCURRED FROM Server in Sending Report.", true);
+                return -5;
+            }
+        } else {
+            logcritical("SEND Packets to Main Server Failed at Requesting Transaction from Server!", true);
+            return -4;
+        }
+        logcritical("SEND Packets Jumped Accept IF Statement!", true);
+        return -3;
     } else {
-        return -1;
+        logcritical("SEND Packets Did Not Receive Valid Map Size!", true);
         return -1;
     }
+    logcritical("SEND Packets Jumped If Statement!", true);
     return -2;
 }
 
@@ -600,19 +639,25 @@ int reportreceiveSSH(std::string data1) {
             std::string compiledreport = createreport();
             std::cout << "REPORT" << std::endl;
             std::string encryptstring = ucrypt_Ecrypt(compiledreport);
-            int resultantvec = splitreportintopack(encryptstring);
+            std::map<int, std::string> resultantvec = splitreportintopack(encryptstring);
             std::cout << compiledreport << std::endl;
             loginfo("Finished Compiling Report", true);
             loginfo("Sending Report to Server", true);
             std::cout << encryptstring << std::endl;
             int returnvalue = sendpacketreports(resultantvec);
-            if (returnvalue == 0) {
+            if (returnvalue > 0) {
                 loginfo("Completed Sending Report to Server!", true);
                 loginfo("Removing and Recreating SSH Container", true);
                 system(dockerkillguestssh.c_str());
                 // system start ssh container
 
                 clearmaps(true);
+            } else if (false) {
+                // FIX THIS
+            } else if (false) {
+
+            } else {
+
             }
         } else {
             fincomplete = false;
