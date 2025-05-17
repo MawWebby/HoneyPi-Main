@@ -446,7 +446,7 @@ int setup() {
     signal(SIGTERM, handleSignal);
     signal(SIGINT, handleSignal);
     sendtolog("OK");
-    sleep(0.5);
+    sleep(1);
 
 
 
@@ -494,6 +494,7 @@ int setup() {
         //FIX THIS ON SERVER SIDE
         //startupchecks = startupchecks + 1;
         sendtolog("REJECTED");
+        return -100;
     } else {
         // UNCAUGHT EXCEPTION
         startupchecks = startupchecks + 5;
@@ -503,8 +504,13 @@ int setup() {
 
 
     // UPDATE API TOKEN
-    startupchecks = startupchecks + updateToken();
-
+    if (checknetworkconnectivitystart == 0) {
+        if (updateToken() != 0) {
+            return -101;
+        }
+    } else {
+        return -102;
+    }
 
 
     // CHECK FOR SYSTEM UPDATES
@@ -657,7 +663,7 @@ int setup() {
     loginfo("Creating server thread on port 11535 listen...Done", true);
 
 
-
+// FIX THIS - GETADDRINFO ON SSH WILL JUST KILL THE CONTAINER INSTEAD OF KEEPING IT ALIVE!
 
 
 
@@ -679,9 +685,9 @@ int setup() {
             timesincelastcheckinSSH.store(time(NULL) + 10);
             sendtolog("Done");
         } else {
-            status = system(dockerkillguestssh.c_str());
+            system(dockerkillguestssh.c_str());
             sleep(3);
-            status = system(dockerremoveguestssh.c_str());
+            system(dockerremoveguestssh.c_str());
             sleep(1);
             status = system(dockerstartguestssh.c_str());
 
@@ -769,7 +775,6 @@ int main() {
 
     // SETUP LOOP
     int startupc = setup();
-    serverStarted.store(1);
     
 
     // STARTUP CHECKS
@@ -791,6 +796,7 @@ int main() {
         return(1);
     }
 
+    serverStarted.store(1);
 
     loginfo("Main HoneyPi has started successfully", true);
     bool runnning = true;
@@ -802,7 +808,7 @@ int main() {
         if (attacked == false) {
             sleep(2);
         } else {
-            sleep(0.25);
+            sleep(1);
             logwarning("Guest VM has been attacked, reporting...", true);
         }
 

@@ -62,9 +62,11 @@ std::string doublequote = "\"";
 int totalnumberofpackets = 0;
 std::map<int, std::string> alldataofreport;
 int packetsize = 1000;
-const std::string startreporting = "{" + doublequote + "STATE" + doublequote + ":" + doublequote + "START_REPORT" + doublequote + "}";
-const std::string acceptedserver = "{" + doublequote + "STATE" + doublequote + "," + doublequote + "SUCCESS" + doublequote + "}";
 
+// HAPI REQUESTS/RESPONSES
+const std::string startreporting = "{" + doublequote + "STATE" + doublequote + ":" + doublequote + "START_REPORT" + doublequote + "}";
+const std::string apireject = "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: rejected}";
+const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: success}";
 
 
 
@@ -112,9 +114,9 @@ std::string sendtoserver(int packettype, int optionnumber, std::string optionstr
     } else if (packettype == 5) {
         data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "NEW_REPORT" + doublequote + "; " + doublequote + "TOTALPACKETS" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "}"; 
     } else if (packettype == 6) {
-        data2 = "HAPI/1.1\nContent-Type:test/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:test/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "TOKENID" + doublequote + ", " + doublequote + tokenID + doublequote + "; " + doublequote + "DATA" + doublequote + ", " + doublequote + optionstring + doublequote + "}";
     } else if (packettype == 7) {
-        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "REPORTFINISH=TRUE" + doublequote + ";" + doublequote + "TOKENID" + doublequote + "," + doublequote + tokenID + doublequote + ";" + doublequote + "DATA" + doublequote + "," + doublequote + optionstring + doublequote + "}";
+        data2 = "HAPI/1.1\nContent-Type:text/json\n\n{" + doublequote + "CONNECTION" + doublequote + ", " + doublequote + "REPORT_PART" + doublequote + "; " + doublequote + "REPORTNUM" + doublequote + ", " + doublequote + inttostring(optionnumber) + doublequote + "; " + doublequote + "REPORTFINISH=TRUE" + doublequote + "; " + doublequote + "TOKENID" + doublequote + ", " + doublequote + tokenID + doublequote + "; " + doublequote + "DATA" + doublequote + ", " + doublequote + optionstring + doublequote + "}";
     } else if (packettype == 8) {
 
     } else if (packettype == 9) {
@@ -222,7 +224,7 @@ int checkserverstatus() {
     } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 20\n\n{state: unavailable}") {
   //      loginfo("SERVER - Server Temporarily Unavailable, Continuing...", true);
         return 3;
-    } else if (yup == "HAPI/1.1 403 OK\nContent-Type:text/json\nContent-Length: 17\n\n{state: rejected}") {
+    } else if (yup == apireject) {
    //     loginfo("SERVER - Received REJECTION!", true);
         return 4;
     } else {
@@ -511,24 +513,32 @@ int sendpacketreports(std::map<int, std::string> packetssend) {
         std::string readyresult = "";
         while (readyresult != startreporting) {
             readyresult = sendtoserver(5,1,"","");
-            if (readyresult != startreporting) {
-                std::cout << "WAITING FOR SERVER RESPONSE! (Trying Again 30 Seconds)" << std::endl;
-                std::cout << "RECEIVED: " << readyresult << std::endl;
-                sleep(30);
-            } else {
+            if (readyresult == startreporting) {
                 std::cout << "RECEIVED APPROVAL FROM SERVER, Starting to Send Report!" << std::endl;
                 sleep(5);
+            } else if (readyresult == apireject) {
+                std::cout << "Received Reject, Waiting 300 seconds." << std::endl;
+                sleep(300);
+            } else {
+                std::cout << "WAITING FOR SERVER RESPONSE! (Trying Again 30 Seconds)" << std::endl;
+                std::cout << "RECEIVED: " << readyresult << std::endl;
+                sleep(30);                
             }
         }
 
         if (readyresult == startreporting) {
             // SEND TO SERVER GOES HERE
             std::string packettyper = sendtoserver(7, 1, packetssend[0], "");
-            if (packettyper == acceptedserver) {
-                loginfo("Report Sent to Server Successfully!", true);
+            if (packettyper == apisuccess) {
+                loginfo("Report Sent to Server Successfully!!!", true);
+                std::cout << "YAY!" << std::endl;
                 return 1;
+            } else if (packettyper == apireject) {
+                logcritical("Received Rejection from Server!", true);
+                return -6;
             } else {
                 logcritical("ERROR OCCURRED FROM Server in Sending Report.", true);
+                logcritical("RECEIVED " + packettyper, true);
                 return -5;
             }
         } else {
@@ -767,7 +777,7 @@ int reportreceiveSSH(std::string data1) {
         } else if (watchdogkillcontainer == "test") {
             // CONTINUE (EDGE CASE)
         } else {
-            int killguest = system(dockerkillguestssh.c_str());
+            system(dockerkillguestssh.c_str());
         }
     } else if (header1 == "WAT") {
         // MAYDAY WATCHDOG KILL!!!
