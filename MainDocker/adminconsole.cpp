@@ -138,6 +138,21 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // SERVER STATUS COMMAND
+    if (command == "restartssh") {
+        if (useraccesslevel >= 1) {
+            std::cout << "RESTARTING GUEST SSH!" << std::endl;
+            sleep(1);
+            system(dockerkillguestssh.c_str());
+            system(dockerremoveguestssh.c_str());
+            system(dockerstartguestssh.c_str());
+        } else {
+            std::cout << "Sorry, you do not permissions to perform this action." << std::endl;
+        }
+
+        foundcommand = true;
+    }
+
     // PING THE NETWORK
     if (command == "ping") {
         if (useraccesslevel >= 1) {
