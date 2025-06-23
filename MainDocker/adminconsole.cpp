@@ -220,6 +220,12 @@ void processCommand(const std::string& command) {
     // UPDATE COMMAND
     if (command == "update") {
         // FUTURE UPDATE COMMAND
+        std::cout << "CHECKING FOR UPDATE" << std::endl;
+        std::cout << "FIX THIS, JUST UPDATING FOR NOW" << std::endl;
+        int checks = updatedockers();
+        std::cout << "Updating Returned Value of " << checks << std::endl;
+        foundcommand = true;
+        updateSIGNAL.store(1);
     }
 
     // SEND TEST REPORT TO SERVER
