@@ -210,8 +210,8 @@ void readfromlogger() {
 //////////////////////////////////
 //// STRING TO INT CONVERSION //// 
 //////////////////////////////////
-int stringtoint(std::string values) {
-    long int valuesdetermine = 0;
+long long int stringtoint(std::string values) {
+    long long int valuesdetermine = 0;
     bool completedwhile = false;
     int timing9760 = 0;
     int timing9760max = values.length();
@@ -225,7 +225,7 @@ int stringtoint(std::string values) {
     }
 
     // CHECK FOR LONG INT
-    if (values.length() > 9) {
+    if (values.length() > 19) {
         loginfo("RECEIVED A SUPER LONG STRING TO ANALYZE! (STD->INT)", true);
         return 0;
     }
@@ -284,8 +284,7 @@ int stringtoint(std::string values) {
 
             // INVALID STRING
             if (validcase != true) {
-                loginfo("AN INVALID CHARACTER WAS RECEIVED (STD->INT); THE CHARACTER WAS: ", false);
-                sendtolog(substringvalue);
+                logwarning("AN INVALID CHARACTER WAS RECEIVED (STD->INT); THE CHARACTER WAS: " + substringvalue, true);
                 return 0;
             }   
         } else {
@@ -298,282 +297,45 @@ int stringtoint(std::string values) {
 }
 
 
+
 //////////////////////////////////
 //// INT TO STRING CONVERSION //// 
 //////////////////////////////////
-std::string inttostring(int value) {
-    std::string returnvalue = "";
-    bool single = false;
-    bool doublenum = false;
-    bool triple = false;
-    bool quad = false;
-    bool penta = false;
-    bool hexa = false;
-
-    // DETERMINE CASE
-    if (value < 9) {
-        single = true;
-        doublenum = false;
-        triple = false;
-        quad = false;
-        penta = false;
-        hexa = false;
-    } else if (value < 99) {
-        single = true;
-        doublenum = true;
-        triple = false;
-        quad = false;
-        penta = false;
-        hexa = false;
-    } else if (value < 999) {
-        single = true;
-        doublenum = true;
-        triple = true;
-        quad = false;
-        penta = false;
-        hexa = false;
-    } else if (value < 9999) {
-        single = true;
-        doublenum = true;
-        triple = true;
-        quad = true;
-        penta = false;
-        hexa = false;
-    } else if (value < 99999) {
-        single = true;
-        doublenum = true;
-        triple = true;
-        quad = true;
-        penta = true;
-        hexa = false;
-    } else if (value < 999999) {
-        single = true;
-        doublenum = true;
-        triple = true;
-        quad = true;
-        penta = true;
-        hexa = true;
-    }
-
-    // START WORK ON EACH CASE
-    if (single == true) {
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0";
-                break;
-            case 1:
-                returnvalue = "1";
-                break;
-            case 2:
-                returnvalue = "2";
-                break;
-            case 3:
-                returnvalue = "3";
-                break;
-            case 4:
-                returnvalue = "4";
-                break;
-            case 5:
-                returnvalue = "5";
-                break;
-            case 6:
-                returnvalue = "6";
-                break;
-            case 7:
-                returnvalue = "7";
-                break;
-            case 8:
-                returnvalue = "8";
-                break;
-            case 9:
-                returnvalue = "9";
-                break;
-        }
-    }
-    if (doublenum == true) {
-        value = value / 10;
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0" + returnvalue;
-                break;
-            case 1:
-                returnvalue = "1" + returnvalue;
-                break;
-            case 2:
-                returnvalue = "2" + returnvalue;
-                break;
-            case 3:
-                returnvalue = "3" + returnvalue;
-                break;
-            case 4:
-                returnvalue = "4" + returnvalue;
-                break;
-            case 5:
-                returnvalue = "5" + returnvalue;
-                break;
-            case 6:
-                returnvalue = "6" + returnvalue;
-                break;
-            case 7:
-                returnvalue = "7" + returnvalue;
-                break;
-            case 8:
-                returnvalue = "8" + returnvalue;
-                break;
-            case 9:
-                returnvalue = "9" + returnvalue;
-                break;
-        }
-    }
-    if (triple == true) {
-        value = value / 10;
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0" + returnvalue;
-                break;
-            case 1:
-                returnvalue = "1" + returnvalue;
-                break;
-            case 2:
-                returnvalue = "2" + returnvalue;
-                break;
-            case 3:
-                returnvalue = "3" + returnvalue;
-                break;
-            case 4:
-                returnvalue = "4" + returnvalue;
-                break;
-            case 5:
-                returnvalue = "5" + returnvalue;
-                break;
-            case 6:
-                returnvalue = "6" + returnvalue;
-                break;
-            case 7:
-                returnvalue = "7" + returnvalue;
-                break;
-            case 8:
-                returnvalue = "8" + returnvalue;
-                break;
-            case 9:
-                returnvalue = "9" + returnvalue;
-                break;
-        }
-    }
-    if (quad == true) {
-        value = value / 10;
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0" + returnvalue;
-                break;
-            case 1:
-                returnvalue = "1" + returnvalue;
-                break;
-            case 2:
-                returnvalue = "2" + returnvalue;
-                break;
-            case 3:
-                returnvalue = "3" + returnvalue;
-                break;
-            case 4:
-                returnvalue = "4" + returnvalue;
-                break;
-            case 5:
-                returnvalue = "5" + returnvalue;
-                break;
-            case 6:
-                returnvalue = "6" + returnvalue;
-                break;
-            case 7:
-                returnvalue = "7" + returnvalue;
-                break;
-            case 8:
-                returnvalue = "8" + returnvalue;
-                break;
-            case 9:
-                returnvalue = "9" + returnvalue;
-                break;
-        }
-    }
-    if (penta == true) {
-        value = value / 10;
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0" + returnvalue;
-                break;
-            case 1:
-                returnvalue = "1" + returnvalue;
-                break;
-            case 2:
-                returnvalue = "2" + returnvalue;
-                break;
-            case 3:
-                returnvalue = "3" + returnvalue;
-                break;
-            case 4:
-                returnvalue = "4" + returnvalue;
-                break;
-            case 5:
-                returnvalue = "5" + returnvalue;
-                break;
-            case 6:
-                returnvalue = "6" + returnvalue;
-                break;
-            case 7:
-                returnvalue = "7" + returnvalue;
-                break;
-            case 8:
-                returnvalue = "8" + returnvalue;
-                break;
-            case 9:
-                returnvalue = "9" + returnvalue;
-                break;
-        }
-    }
-    if (hexa == true) {
-        value = value / 10;
-        int numbertech = value % 10;
-        switch (numbertech) {
-            case 0:
-                returnvalue = "0" + returnvalue;
-                break;
-            case 1:
-                returnvalue = "1" + returnvalue;
-                break;
-            case 2:
-                returnvalue = "2" + returnvalue;
-                break;
-            case 3:
-                returnvalue = "3" + returnvalue;
-                break;
-            case 4:
-                returnvalue = "4" + returnvalue;
-                break;
-            case 5:
-                returnvalue = "5" + returnvalue;
-                break;
-            case 6:
-                returnvalue = "6" + returnvalue;
-                break;
-            case 7:
-                returnvalue = "7" + returnvalue;
-                break;
-            case 8:
-                returnvalue = "8" + returnvalue;
-                break;
-            case 9:
-                returnvalue = "9" + returnvalue;
-                break;
-        }
-    }
+std::string inttostring(long long int value) {
+    std::string returnvalue = std::to_string(value);
     return returnvalue;
 }
 
+
+
+/////////////////////////////
+// CONVERT STRING TO FLOAT // 
+/////////////////////////////
+float stringtofloat(std::string input) {
+    float returnvalue = 0;
+
+    try {
+        returnvalue = std::stof(input); // This will throw an exception
+    } catch (const std::invalid_argument& e) {
+        logwarning("Invalid Argument: " + input, true);
+        return -1;
+    } catch (const std::out_of_range& e) {
+        logwarning("Out of Range: " + input, true);
+        return -1;
+    }
+
+    return returnvalue;
+}
+
+
+/////////////////////////////
+// CONVERT FLOAT TO STRING //
+/////////////////////////////
+std::string floattostring(float input) {
+    std::string returnvalue = "";
+    returnvalue = std::to_string(input);
+    return returnvalue;
+}
 
 
 
@@ -614,3 +376,38 @@ int pingnetwork() {
 
 
 
+
+
+
+// STANDARD RETURN
+// NONE = UPDATE IS BEING APPLIED SUCCESSFULLY
+// 0 = NO UPDATE AVAILABLE
+
+// ERROR RETURNS
+// -1 = COULD NOT RUN DOCKER DOWNLOAD COMMAND (UPDATE BUDDY)
+// -2 = 
+
+int updatedockers() {
+
+    // Download Latest UpdateBuddy
+    std::cout << "STARTING UPDATE!" << std::endl;
+    std::string downloadupdatebuddy = "docker pull mawwebby/honeypotpi:updatebuddyV1";
+    if (system(downloadupdatebuddy.c_str()) != 0) {
+        return -1;
+    }
+
+    // RUN UpdateBuddy
+    std::string startupdatebuddy = "docker run -d -v /var/run/docker.sock:/var/run/docker.sock --name UpdateBuddy mawwebby/honeypotpi:updatebuddyV1";
+    if (system(startupdatebuddy.c_str()) != 0) {
+        std::string removeupdatebuddy = "docker container rm UpdateBuddy";
+        if (system(removeupdatebuddy.c_str()) != 0) {
+            return -2;
+        } else {
+            if (system(startupdatebuddy.c_str()) != 0) {
+                return -3;
+            }
+        }
+    }
+
+    return 0;
+}

@@ -22,7 +22,8 @@ std::string refreshDate();
 std::string refreshTime();
 
 // CONVERSIONS
-int stringtoint(std::string);
+long long int stringtoint(std::string);
+std::string inttostring(long long int);
 
 // GENERATORS
 std::string generateToken();
@@ -30,8 +31,8 @@ std::string generateToken();
 // PING NETWORK
 int pingnetwork();
 
-// INT TO STRING
-std::string inttostring(int);
+// UPDATE ALL DOCKER CONTAINERS
+int updatedockers();
 
 
 #endif
