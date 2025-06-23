@@ -66,4 +66,4 @@ RUN rm -r /usr/src/temphoney
 ENTRYPOINT ["./honeypi"]
 
 # Versions and Labels
-LABEL Name=honeypotpi Version=0.1.1
+LABEL Name=HoneyPiMain Version=0.6.0

@@ -71,8 +71,8 @@ const std::string apisuccess = "HAPI/1.1 200 OK\nContent-Type:text/json\nContent
 
 
 // CREATE NETWORK SOCKET AT ADDRESS
-//const char* server_ip = "honeypi.baselinux.net";
-const char* server_ip = "10.72.91.159";
+const char* server_ip = "honeypi.baselinux.net";
+//const char* server_ip = "10.72.91.159";
 const int server_port = 11829;
 
 

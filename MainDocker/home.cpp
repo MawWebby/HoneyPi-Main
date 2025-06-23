@@ -1,7 +1,7 @@
 #include "globalheaders.h"
 
 
-std::string honeyversion = "0.5.0";
+std::string honeyversion = "0.6.0";
 bool debug = false;
 bool beta = true;
 bool testing = false;
@@ -479,11 +479,11 @@ int setup() {
         sendtolog("OK");
     } else if (checknetworkconnectivitystart == 1) {
         // INVALID RESPONSE
-        sendtolog("ERROR (1)");
+        sendtolog("return (1)");
         startupchecks = startupchecks + 1;
     } else if (checknetworkconnectivitystart == 2) {
         // ERROR IN COMMAND
-        sendtolog("ERROR (2)");
+        sendtolog("return (2)");
         startupchecks = startupchecks + 2;
     } else if (checknetworkconnectivitystart == 3) {
         // TEMPORARILY UNAVAILABLE
