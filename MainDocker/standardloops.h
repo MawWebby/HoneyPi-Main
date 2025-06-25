@@ -4,6 +4,12 @@
 #define STANDARDLOOPS_H
 
 
+// SSH LOG OUTPUT FUNCTIONS
+void sendtoSSHlog(std::string);
+
+// SSH LOG READ COMMANDS
+void readfromsshlogger();
+
 // LOG OUTPUT COMMANDS
 void sendtolog(std::string);
 void sendtologopen(std::string);
@@ -13,7 +19,7 @@ void logwarning(std::string, bool);
 void logcritical(std::string, bool);
 void logerror(std::string, std::string);
 
-// LOG INPUT COMMANDS
+// LOG READ COMMANDS
 void readfromlogger();
 
 // TIME DETECTOR

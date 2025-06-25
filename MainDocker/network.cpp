@@ -243,7 +243,7 @@ int checkserverstatus() {
 //////////////////////////////////
 int updateToken() {
     int status = 0;
-    loginfo("Updating ID from Server...", false);
+    loginfo("SERVER - Updating ID from Server...", false);
     std::string newID = sendtoserver(1, 0, "", "");
     //std::cout << "ERRORED" << newID.length() << newID << std::endl;
     if (newID != "" && newID.length() >= 148) {
@@ -829,6 +829,8 @@ int reportreceiveSSH(std::string data1) {
         } else {
             testreport = false;
         }
+    } else if (header1 == "LOG") {
+        sendtoSSHlog(data1.substr(5));
     } else {
         logcritical("RECEIVED INVALID PACKET FROM SSH", true);
         logcritical("RECEIVED: " + data1, true);
