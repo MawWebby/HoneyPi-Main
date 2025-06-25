@@ -1,0 +1,11 @@
+HoneyPi Config v1:
+ - Config File Location = /home/config.txt
+ - Auto-Update = Yes
+ - Check-Updates = 1 week
+ - Channel-Updates = Stable
+ - SSH-Guest = Yes
+ - Docker Sock Location = /var/run/docker.sock 
+ - DebugMode = No
+ - API KEY = xxxxx
+ - Log Location = INTERNAL
+ - SSH Debug Log = INTERNAL
