@@ -377,10 +377,214 @@ int pingnetwork() {
 
 
 
+///////////////////////////////////////
+// READ CONFIG FILE AND PRINT OUTPUT //
+///////////////////////////////////////
+// ERROR RETURNS
+// [0] = "ERROR"
+// [1] = error of some type
+
+// NORMAL RETURNS 
+// [0] = Valid Config (True / ERROR)
+// [1] = Config File Location (STRING)
+// [2] = Auto-Update (1 / 0)
+// [3] = Check-Updates (Time in Hours)
+// [4] = Channel-Updates (Stable / Beta / Dev)
+// [5] = SSH-Guest (1 / 0)
+// [6] = Docker Sock Location (STRING)
+// [7] = Debug Mode (1 / 0)
+// [8] = API KEY (STRING)
+// [9] = Main Log Location (STRING / "INTERNAL")
+// [10] = SSH Log (STRING / "INTERNAL")
+std::map<int, std::string> readconfig() {
+    std::map<int, std::string> errormap;
+    std::map<int, std::string> correctmap;
+    errormap[0] = "ERROR";
+
+    std::ifstream configfile;
+    std::string configlocation = "/home/config.txt";
+    configfile.open(configlocation.c_str());
+    if (configfile.is_open() != true) {
+        errormap[1] = "Could Not Open Config File!";
+        return errormap;
+    }
+
+    std::string newline = "";
+    bool completion21 = false;
+    bool validheader = false;
+    bool valid0 = false;
+    bool valid1 = false;
+    bool valid2 = false;
+    bool valid3 = false;
+    bool valid4 = false;
+    bool valid5 = false;
+    bool valid6 = false;
+    bool valid7 = false;
+    bool valid8 = false;
+    bool valid9 = false;
+    bool valid10 = false;
+
+    // MAIN READING LOOP
+    while (completion21 == false) {
+        if (configfile.eof() == true) {
+            completion21 = true;
+        }
+        getline(configfile, newline);
+        if (newline.length() >= 17) {
+            // CHECK FOR COMMENT
+            if (newline.substr(0,2) != "//" && newline.substr(0,1) != "#") {
+                // DETERMINE IF VALID CASE CONDITION
+                if (newline.length() > 16) {
+
+                    // HEADER
+                    if (newline.substr(0,16) == "HoneyPi Config v") {
+                        if (newline.substr(16,2) != "1:") {
+                            errormap[1] = "Invalid Version of Config File!";
+                            return errormap;
+                        } else {
+                            validheader = true;
+                            correctmap[0] = "True";
+                        }
+                    }
+
+                    // CONFIG FILE LOCATION
+                    else if (newline.substr(0, 17) == " - Config File Lo") {
+                        if (newline.length() > 23) {
+                            correctmap[1] = newline.substr(26, newline.length() - 26);
+                            valid0 = true;
+                        } else {
+                            errormap[1] = "Config File Location too short";
+                        }
+                    }
+
+                    // AUTO UPDATE
+                    else if (newline.substr(0,17) == " - Auto-Update = ") {
+                        if (newline.substr(17,2) == "Ye") {
+                            correctmap[2] = "1";
+                            valid1 = true;
+                        } else if (newline.substr(17,2) == "No") {
+                            correctmap[2] = "0";
+                            valid1 = true;
+                        } else {
+                            errormap[1] = "Invalid Case Received (Auto-Update)";
+                        }
+                    }
+
+                    // Check for Updates
+                    else if (newline.substr(0,17) == " - Check-Updates ") {
+                        if (newline.substr(19) == "1 week") {
+                            correctmap[3] = "164";
+                            valid2 = true;
+                        } else if (newline.substr(19) == "1 day") {
+                            correctmap[3] = "24";
+                            valid2 = true;
+                        } else if (newline.substr(19) == "1 hour") {
+                            correctmap[3] = "1";
+                            valid2 = true;
+                        } else {
+                            errormap[1] = "Invalid Time Received (Check Update)";
+                        }
+                    }
+
+                    // Update Channel
+                    else if (newline.substr(0,17) == " - Channel-Update") {
+                        if (newline.substr(21) == "Stable") {
+                            correctmap[4] = "Stable";
+                            valid3 = true;
+                        } else if (newline.substr(21) == "Beta") {
+                            correctmap[4] = "Beta";
+                            valid3 = true;
+                        } else if (newline.substr(21) == "Dev") {
+                            correctmap[4] = "Dev";
+                            valid3 = true;
+                        } else {
+                            errormap[1] = "Invalid Update Channel";
+                        }
+                    }
+
+                    // Start SSH Guest
+                    else if (newline.substr(0,17) == " - SSH-Guest = Ye") {
+                        correctmap[5] = "1";
+                        valid4 = true;
+                    } 
+                    else if (newline.substr(0,17) == " - SSH-Guest = No") {
+                        correctmap[5] = "0";
+                        valid4 = true;
+                    }
+
+                    // Docker Sock Location
+                    else if (newline.substr(0,17) == " - Docker Sock Lo") {
+                        if (newline.length() > 36) {
+                            correctmap[6] = newline.substr(26);
+                            valid5 = true;
+                        } else {
+                            errormap[1] = "Invalid Docker Sock Location Received";
+                        }
+                    }
+
+                    // Debug Mode Enabled
+                    else if (newline.substr(0,17) == " - DebugMode = Ye") {
+                        correctmap[7] = "1";
+                        valid6 = true;
+                    }
+                    else if (newline.substr(0,17) == " - DebugMode = No") {
+                        correctmap[7] = "0";
+                        valid6 = true;
+                    }
+
+                    // API Key
+                    else if (newline.substr(0,13) == " - API KEY = ") {
+                        correctmap[8] = newline.substr(13, newline.length() - 13);
+                        valid7 = true;
+                    }
+
+                    // Log Location
+                    else if (newline.substr(0,17) == " - Log Location =") {
+                        if (newline.substr(18,3) == "INT") {
+                            correctmap[9] = "0";
+                            valid8 = true;
+                        } else {
+                            correctmap[9] = newline.substr(18, newline.length() - 18);
+                            valid8 = true;
+                        }
+                    }
+                    
+                    // SSH Debug Log
+                    else if (newline.substr(0,17) == " - SSH Debug Log ") {
+                        if (newline.substr(19,3) == "INT") {
+                            correctmap[10] = "0";
+                            valid9 = true;
+                        } else {
+                            correctmap[10] = newline.substr(19, newline.length() - 19);
+                            valid9 = true;
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    configfile.close();
+    if (validheader == true && valid0 == true && valid1 == true && valid2 == true && valid3 == true && valid4 == true && valid5 == true && valid6 == true && valid7 == true && valid8 == true && valid9 == true) {
+        return correctmap;
+    } else {
+        logwarning("End of File Received in Trying to Review Config File!", true);
+        if (errormap[1] == "") {
+            errormap[1] = "EOF Received in Config File!";
+        }
+        
+        return errormap;
+    }
+    errormap[1] = "Skipped If Statement";
+    return errormap;
+}
 
 
+
+// FIX THIS
 // STANDARD RETURN
-// NONE = UPDATE IS BEING APPLIED SUCCESSFULLY
+// 1 = UPDATE IS BEING APPLIED SUCCESSFULLY
 // 0 = NO UPDATE AVAILABLE
 
 // ERROR RETURNS
@@ -397,7 +601,16 @@ int updatedockers() {
     }
 
     // RUN UpdateBuddy
-    std::string startupdatebuddy = "docker run -d -v /var/run/docker.sock:/var/run/docker.sock --name UpdateBuddy mawwebby/honeypotpi:updatebuddyV1";
+    std::map<int, std::string> configcontents = readconfig();
+    if (configcontents[0] == "ERROR") {
+        logwarning("Found Error in Config File, COULD NOT CONTINUE!", true);
+        return -4;
+    }
+    std::string dockersocklocation = configcontents[6];
+    std::string conflocation = configcontents[1];
+
+    std::string startupdatebuddy = "docker run -d -v " + dockersocklocation + ":/var/run/docker.sock -v " + conflocation + ":/home/config.txt --name UpdateBuddy mawwebby/honeypotpi:updatebuddyV1";
+    std::cout << startupdatebuddy << std::endl;
     if (system(startupdatebuddy.c_str()) != 0) {
         std::string removeupdatebuddy = "docker container rm UpdateBuddy";
         if (system(removeupdatebuddy.c_str()) != 0) {
@@ -408,6 +621,6 @@ int updatedockers() {
             }
         }
     }
-
-    return 0;
+    updateSIGNAL.store(1);
+    return 1;
 }

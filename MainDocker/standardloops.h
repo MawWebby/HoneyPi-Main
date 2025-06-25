@@ -31,6 +31,9 @@ std::string generateToken();
 // PING NETWORK
 int pingnetwork();
 
+// READ CONFIG FILE
+std::map<int, std::string> readconfig();
+
 // UPDATE ALL DOCKER CONTAINERS
 int updatedockers();
 

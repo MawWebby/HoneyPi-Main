@@ -9,7 +9,7 @@ bool bypassterminal = false;
 
 // ID PARAMETERS
 std::string tokenID = "";
-std::string apiKEY = "CvuapyqkefZHKhjHLkusI6ZLKfHbYc40xILa1eBEUkOIxYGqHy8sLXX7GVJegk9e";
+std::string apiKEY = "";
 std::string passstr = "";
 std::string loginstr = "";
 
@@ -202,8 +202,8 @@ std::map<int, bool> serverportsactive = {
 //// DOCKER COMMANDS TO RUN ////
 ////////////////////////////////
 std::string dockerstatuscommand = "docker ps > nul:";
-std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 &> /dev/null";
-std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork honeypotpi:guestsshv1 &> /dev/null";
+std::string dockerstartguestssh = "docker run -itd --rm --name=SSHVMV1 -p 222:22 --network=localportnetwork mawwebby/honeypotpi:guestsshv1 &> /dev/null";
+std::string dockerstartguestsshNOREMOVE = "docker run -itd --name=SSHVMV1 -p 222:22 --network=localportnetwork mawwebby/honeypotpi:guestsshv1 &> /dev/null";
 std::string dockerkillguestssh = "docker container kill SSHVMV1 &> /dev/null";
 std::string dockerremoveguestssh = "docker container rm SSHVMV1 &> /dev/null";
 
@@ -451,7 +451,7 @@ int setup() {
 
 
     // DETERMINE NETWORK CONNECTIVITY
-    loginfo("Determining Network Connectivity...", false);
+    loginfo("NETWOR - Checking Network Connectivity...", false);
     int learnt = pingnetwork();
 
     if (learnt == 0) {
@@ -468,8 +468,36 @@ int setup() {
 
 
 
+    // CHECKING FOR CONFIG FILE
+    loginfo("CONFIG - Checking Config File...", false);
+    std::map<int, std::string> configreturns = readconfig();
+    if (configreturns[0] == "ERROR") {
+        sendtolog("ERROR");
+        logwarning("Error Occurred in Reading Config File!", true);
+        logwarning("Logged: " + configreturns[1], true);
+        return 2;
+    } else {
+        sendtolog("Done");
+    }
+    loginfo("CONFIG - Configuration File:", true);
+    loginfo("       - [Status] = " + configreturns[0], true);
+    loginfo("       - [Config File Location] = " + configreturns[1], true);
+    loginfo("       - [Auto-Update] = " + configreturns[2], true);
+    loginfo("       - [Check Updates Every] = " + configreturns[3], true);
+    loginfo("       - [Update Channel] = " + configreturns[4], true);
+    loginfo("       - [SSH] = " + configreturns[5], true);
+    loginfo("       - [Docker Sock Location] = " + configreturns[6], true);
+    loginfo("       - [Debug Mode] = " + configreturns[7], true);
+    loginfo("       - [API Key] = " + configreturns[8], true);
+    loginfo("       - [Main Log Location] = " + configreturns[9], true);
+    loginfo("       - [SSH Log Location] = " + configreturns[10], true);
+
+    apiKEY = configreturns[8];
+    debug = stringtoint(configreturns[7]);
+
+
     // CHECK UPSTREAM SERVER STATUS
-    loginfo("Checking Upstream Server Connectivity...", false);
+    loginfo("NETWOR - Checking Upstream Server Connectivity...", false);
     int checknetworkconnectivitystart = checkserverstatus();
 
     // CASES
@@ -514,8 +542,8 @@ int setup() {
 
 
     // CHECK FOR SYSTEM UPDATES
-    loginfo("Checking for Updates...", false);
-    if (checkforupdates == true) {
+    loginfo("UPDATE - Checking for Updates...", false);
+    if (checkforupdates == true && stringtoint(configreturns[2])) {
         // CHECK FOR SYSTEM UPDATES
         int returnedvalue = system("apt-get update > nul:");
         if (returnedvalue == 0) {
@@ -550,25 +578,8 @@ int setup() {
     
 
 
-    // OPEN HACKING FILES
-    loginfo("[INFO] - Opening File...", false);
-//    fstream myFile;
- //   myFile.open("hackerlogv1.txt");
-
-//    if (myFile.is_open() == false) {
- //       sendtologclosed("ERROR");
- //       startupchecks = startupchecks + 1;
- //   } else {
- //       sendtologclosed("DONE");
- //   }
-    sendtolog("future");
-
-
-
-
-
     // CHECK DOCKER STATUS
-    loginfo("Checking for Docker Control...", false);
+    loginfo("DOCKER - Checking for Docker Control...", false);
     sleep(1);
     int output = system(dockerstatuscommand.c_str());
     if (output == 0) {
@@ -588,7 +599,7 @@ int setup() {
 
 
     // OPEN NETWORK SERVER PORTS (1/3)
-    loginfo("Opening Server Ports (1/3)", false);
+    loginfo("SERVER - Opening Server Ports (1/3)", false);
 
     int server63599 = createnetworkport63599();
 
@@ -609,7 +620,7 @@ int setup() {
     int PORT = 11535;
 
     // OPEN NETWORK SERVER PORTS (2/3)
-    loginfo("Opening Server Ports (2/3)...", false);
+    loginfo("SERVER - Opening Server Ports (2/3)...", false);
 
     int server_fd2, new_socket2;
     ssize_t valread2;
@@ -660,7 +671,7 @@ int setup() {
     std::thread acceptingClientsThread2(handle11535Connections, server_fd2);
     acceptingClientsThread2.detach();
     sleep(1);
-    loginfo("Creating server thread on port 11535 listen...Done", true);
+    loginfo("SERVER - Creating server thread on port 11535 listen...Done", true);
 
 
 // FIX THIS - GETADDRINFO ON SSH WILL JUST KILL THE CONTAINER INSTEAD OF KEEPING IT ALIVE!
@@ -668,7 +679,7 @@ int setup() {
 
 
     // START GUEST DOCKER CONTAINER FOR SSH
-    loginfo("Starting Guest Docker Container (SSH) - ", false);
+    loginfo("DOCKER - Starting Guest Docker Container (SSH) - ", false);
     sleep(2);
 
     if (startupchecks == 0) {
@@ -713,7 +724,7 @@ int setup() {
 
 
     // SYSTEM STARTED
-    loginfo("Updating API Token...", false);
+    loginfo("NETWOR - Updating API Token...", false);
 
 
     // FUTURE NETWORK COMMUNICATION TO UPDATE API TOKENS
@@ -727,7 +738,7 @@ int setup() {
     std::thread acceptingClientsThread(handleConnections63599, server63599);
     acceptingClientsThread.detach();
     sleep(1);
-    loginfo("Creating server thread on port 63599 listen...Done", false);
+    loginfo("SERVER - Creating server thread on port 63599 listen...Done", false);
 
     // STARTUP CHECKS
     if (startupchecks != 0) {
@@ -798,7 +809,7 @@ int main() {
 
     serverStarted.store(1);
 
-    loginfo("Main HoneyPi has started successfully", true);
+    loginfo("INFO   - Main HoneyPi has started successfully", true);
     bool runnning = true;
 
 
@@ -809,7 +820,7 @@ int main() {
             sleep(2);
         } else {
             sleep(1);
-            logwarning("Guest VM has been attacked, reporting...", true);
+            logwarning("SERVER - Guest VM has been attacked, reporting...", true);
         }
 
         if (stopSIGNAL.load() == 1) {
