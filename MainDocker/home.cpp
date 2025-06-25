@@ -409,6 +409,8 @@ int setup() {
     // START LOG LOOP
     startupchecks = system("rm /home/honeypi/log/log.txt");
     startupchecks = startupchecks + system("touch /home/honeypi/log/log.txt");
+    startupchecks = startupchecks + system("rm /home/honeypi/log/SSHlog.txt");
+    startupchecks = startupchecks + system("touch /home/honeypi/log/SSHlog.txt");
 
 
     sendtolog("Hello, World from 2514!");

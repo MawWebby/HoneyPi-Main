@@ -9,6 +9,7 @@ int stopping;
 
 // LOGFILE
 const char* logfile = "/home/honeypi/log/log.txt";
+const char* SSHlogfile = "/home/honeypi/log/SSHlog.txt";
 
 
 
@@ -88,6 +89,53 @@ std::string refreshTime() {
         clockfull = timeclock.substr(18,8);
     }
     return clockfull;
+}
+
+
+
+
+////////////////////////////////
+// Send to SSH Logger Scripts //
+////////////////////////////////
+void sendtoSSHlog(std::string data2) {
+    serverStatus = serverStarted.load();
+    updating = updateSIGNAL.load();
+    stopping = stopSIGNAL.load();
+
+    std::string timedet = timedetector();
+    data2 = "[SSH]" + data2;
+    
+    std::ofstream sshlogfilestream;
+    sshlogfilestream.open(SSHlogfile, std::ofstream::out | std::ofstream::app);
+    if (sshlogfilestream.is_open() == true) {
+        sshlogfilestream << data2 << std::endl;
+    } else {
+        std::cout << "[ERRO] - COULD NOT SAVE TO LOGFILE!" << std::endl;
+        std::cout << "[ERRO] - MESSAGE: " << data2 << std::endl;
+    }
+    sshlogfilestream.close();
+}
+
+
+
+
+/////////////////////////////////
+//// READ FROM LOGGER SRIPTS ////
+/////////////////////////////////
+void readfromsshlogger() {
+    std::ifstream sshlogfilestream;
+    sshlogfilestream.open(SSHlogfile);
+    if (sshlogfilestream.is_open() == true) {
+        char linebits[2048];
+        while (sshlogfilestream.eof() == false) {
+            sshlogfilestream.getline(linebits, 2048);
+            std::cout << linebits << std::endl;
+        }
+        std::cout << std::endl << "Reached End of SSH Log File" << std::endl;
+    } else {
+        std::cout << "[ERRO] - COULD NOT OPEN LOGFILE!" << std::endl;
+    }
+    sshlogfilestream.close();
 }
 
 
