@@ -288,6 +288,16 @@ void processCommand(const std::string& command) {
         foundcommand = true;
     }
 
+    // OPEN AND READ SSH LOG FILES
+    if (command == "sshlogs") {
+        if (useraccesslevel >= 1) {
+            readfromsshlogger();
+        } else {
+            std::cout << "Sorry, you do not have permissions to perform this action." << std::endl;
+        }
+        foundcommand = true;
+    }
+
     // ENTER BASH OF SYSTEM
     if (command == "system") {
         if (useraccesslevel >= 1) {
